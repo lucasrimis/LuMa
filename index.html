@@ -16,6 +16,7 @@
     --ow:clamp(24px, 6.2vw, 36px);
   }
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html,body{margin:0;min-height:100%}
   body{font-family:'Fredoka',system-ui,sans-serif;color:var(--text);
     background:radial-gradient(1200px 700px at 20% -10%, #3a2c6e 0%, transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2));
@@ -1166,7 +1167,7 @@ $('#copyBtn').onclick=()=>{
 };
 $('#newBtn').onclick=goHome;
 $('#rulesBtn').onclick=showRules;
-function goHome(){ stopFinale(); closeModal(); leaveRoom(); G=null; $('#fx').innerHTML=''; mySeat=0; show('home'); }
+function goHome(){ stopFinale(); closeModal(); leaveRoom(); G=null; ['#fx','#opps','#mine','#deck','#discard','#held','#scores','#log','#msg'].forEach(q=>{ $(q).innerHTML=''; }); mySeat=0; show('home'); }
 
 function renderLobby(){
   const T=L();
