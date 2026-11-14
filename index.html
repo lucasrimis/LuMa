@@ -1402,7 +1402,7 @@ function showSixSeven(){
   document.querySelectorAll('.sixSeven').forEach(e=>e.remove());
   const r=panel.getBoundingClientRect();
   const h=Math.max(160, Math.min(r.height-14, 380, innerHeight*0.6)), w=h*SIX7_W/SIX7_H;
-  const outward = innerWidth-r.right >= w*0.9;   // room beside the panel: lean out of it; otherwise lean in over the cards
+  const outward = false;   // always lean in over the cards, from behind the panel's right border
   const url=six7Url(), img=new Image();
   img.className='sixSeven'+(outward?'':' inward'); img.alt=''; img.draggable=false;
   Object.assign(img.style,{width:w+'px',height:h+'px',
