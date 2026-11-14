@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="LuMa — jogo de cartas online para até 4 pessoas.">
+<title>LuMa — jogo de cartas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Tilt+Neon&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1:#101a33; --bg2:#2b1d4f; --panel:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
+    --text:#eef0ff; --muted:#a9b0d6; --accent:#ffd166;
+    --neg:#6c5ce7; --zero:#22a6c7; --low:#2fae66; --mid:#e9a923; --high:#e1523d;
+    --cw:clamp(46px, 13vw, 70px);
+    --ow:clamp(24px, 6.2vw, 36px);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font-family:'Fredoka',system-ui,sans-serif;color:var(--text);
+    background:radial-gradient(1200px 700px at 20% -10%, #3a2c6e 0%, transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100vh;}
+  button{font-family:inherit;cursor:pointer}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.5px}
+  header h1 span{color:var(--accent)}
+  .hbtns{display:flex;gap:8px}
+  .btn{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 12px;border-radius:10px;font-size:14px}
+  .btn:hover{background:rgba(255,255,255,.12)}
+  select.btn{appearance:none;-webkit-appearance:none;padding-right:12px}
+  select.btn option{color:#111;background:#fff}
+  .btn.primary{background:var(--accent);color:#2a1d10;border-color:transparent;font-weight:600}
+  .btn.primary:hover{filter:brightness(1.05)}
+  main{display:grid;grid-template-columns:1fr 240px;gap:16px;padding:16px;max-width:1150px;margin:0 auto}
+  @media (max-width:820px){main{grid-template-columns:1fr}}
+
+  /* setup */
+  #setup{max-width:520px;margin:40px auto;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:18px;text-align:center}
+  #setup h2{margin:0 0 6px;font-size:26px}
+  #setup p{color:var(--muted);margin:0 0 18px}
+  .choices{display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+  .choice{padding:10px 16px;border-radius:12px;border:2px solid var(--line);background:transparent;color:var(--text);font-size:16px}
+  .choice.on{border-color:var(--accent);background:rgba(255,209,102,.12)}
+
+  /* board */
+  #opps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+  .opp{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;transition:box-shadow .2s,border-color .2s}
+  .opp.turn,.mine.turn{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,209,102,.35)}
+  .pname{display:flex;justify-content:space-between;align-items:center;font-weight:600;margin-bottom:8px;font-size:15px}
+  .pname small{color:var(--muted);font-weight:400}
+  .grid{display:grid;grid-template-rows:repeat(3,auto);grid-auto-flow:column;gap:5px;justify-content:center}
+  .opp .grid .card{width:var(--ow);height:calc(var(--ow)*1.4);font-size:calc(var(--ow)*.5);border-radius:6px}
+  .card{width:var(--cw);height:calc(var(--cw)*1.4);border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:calc(var(--cw)*.46);color:#fff;position:relative;user-select:none;
+    box-shadow:0 2px 0 rgba(0,0,0,.25), inset 0 0 0 2px rgba(255,255,255,.18);transition:transform .15s, box-shadow .15s}
+  /* dalmatian-spotted card back */
+  .card.back{
+    background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20100%20140%27%20preserveAspectRatio%3D%27none%27%3E%3Cg%20fill%3D%27%23141414%27%3E%3Cpath%20d%3D%27M28.4%2C13.0Q27.6%2C16.0%2027.2%2C19.1Q26.8%2C22.1%2024.2%2C23.5Q21.6%2C24.8%2019.0%2C23.3Q16.4%2C21.7%2014.9%2C20.0Q13.5%2C18.2%2013.8%2C16.0Q14.2%2C13.7%2014.5%2C11.2Q14.8%2C8.7%2018.0%2C9.0Q21.2%2C9.2%2025.2%2C9.6Q29.2%2C10.0%2028.4%2C13.0Z%27/%3E%3Cpath%20d%3D%27M69.3%2C9.1Q70.3%2C10.0%2069.9%2C11.6Q69.5%2C13.2%2068.2%2C13.9Q66.8%2C14.6%2065.7%2C13.7Q64.5%2C12.7%2063.3%2C11.9Q62.0%2C11.2%2062.3%2C10.0Q62.6%2C8.9%2063.2%2C7.6Q63.8%2C6.4%2065.2%2C6.2Q66.6%2C6.1%2067.4%2C7.1Q68.2%2C8.1%2069.3%2C9.1Z%27/%3E%3Cpath%20d%3D%27M93.0%2C33.9Q94.1%2C36.0%2092.7%2C38.0Q91.3%2C39.9%2089.2%2C41.2Q87.2%2C42.5%2084.2%2C42.7Q81.3%2C42.9%2080.6%2C40.4Q79.8%2C38.0%2078.8%2C35.8Q77.9%2C33.6%2080.0%2C31.5Q82.1%2C29.3%2084.8%2C28.4Q87.4%2C27.5%2089.7%2C29.6Q92.0%2C31.8%2093.0%2C33.9Z%27/%3E%3Cpath%20d%3D%27M46.7%2C31.2Q47.0%2C32.0%2046.6%2C32.8Q46.3%2C33.6%2045.5%2C34.7Q44.8%2C35.9%2043.3%2C35.7Q41.9%2C35.6%2040.9%2C34.4Q39.9%2C33.3%2040.2%2C32.0Q40.4%2C30.8%2040.9%2C29.6Q41.4%2C28.5%2043.0%2C28.6Q44.7%2C28.7%2045.5%2C29.5Q46.3%2C30.4%2046.7%2C31.2Z%27/%3E%3Cpath%20d%3D%27M63.9%2C61.6Q67.7%2C64.0%2065.3%2C67.7Q62.9%2C71.4%2059.4%2C72.2Q55.8%2C73.0%2053.0%2C71.6Q50.1%2C70.2%2048.5%2C68.4Q46.9%2C66.7%2046.3%2C64.1Q45.7%2C61.5%2047.9%2C59.4Q50.1%2C57.3%2053.1%2C56.2Q56.0%2C55.0%2058.1%2C57.1Q60.2%2C59.2%2063.9%2C61.6Z%27/%3E%3Cpath%20d%3D%27M18.6%2C56.9Q20.3%2C58.0%2019.9%2C59.8Q19.5%2C61.7%2017.1%2C61.9Q14.8%2C62.2%2013.0%2C62.0Q11.2%2C61.9%209.8%2C61.0Q8.5%2C60.1%209.4%2C58.4Q10.3%2C56.6%2011.0%2C55.5Q11.7%2C54.4%2013.3%2C53.7Q14.9%2C53.0%2015.9%2C54.4Q16.9%2C55.7%2018.6%2C56.9Z%27/%3E%3Cpath%20d%3D%27M36.3%2C85.3Q37.1%2C86.0%2037.2%2C87.2Q37.3%2C88.4%2035.9%2C88.6Q34.6%2C88.9%2033.6%2C88.8Q32.5%2C88.8%2031.2%2C88.0Q29.9%2C87.2%2029.9%2C86.0Q29.9%2C84.8%2031.2%2C84.2Q32.5%2C83.6%2033.5%2C83.7Q34.5%2C83.8%2035.0%2C84.2Q35.6%2C84.6%2036.3%2C85.3Z%27/%3E%3Cpath%20d%3D%27M89.3%2C87.2Q87.9%2C90.0%2087.3%2C92.1Q86.7%2C94.3%2084.8%2C94.7Q82.9%2C95.2%2081.0%2C95.0Q79.0%2C94.9%2077.4%2C93.4Q75.7%2C91.8%2075.3%2C89.6Q75.0%2C87.3%2076.9%2C85.9Q78.7%2C84.6%2080.9%2C84.0Q83.1%2C83.4%2086.9%2C83.9Q90.7%2C84.4%2089.3%2C87.2Z%27/%3E%3Cpath%20d%3D%27M30.8%2C105.5Q30.8%2C108.0%2029.1%2C109.6Q27.5%2C111.1%2026.3%2C112.4Q25.0%2C113.7%2022.7%2C114.1Q20.4%2C114.5%2019.4%2C112.0Q18.4%2C109.6%2018.3%2C107.7Q18.2%2C105.8%2019.6%2C104.1Q21.0%2C102.4%2023.2%2C102.0Q25.4%2C101.7%2028.2%2C102.4Q30.9%2C103.1%2030.8%2C105.5Z%27/%3E%3Cpath%20d%3D%27M63.0%2C102.8Q63.5%2C104.0%2063.2%2C105.0Q62.9%2C106.0%2061.9%2C107.0Q60.8%2C107.9%2059.5%2C107.5Q58.3%2C107.1%2056.3%2C106.3Q54.4%2C105.6%2054.5%2C104.0Q54.6%2C102.4%2055.9%2C101.2Q57.2%2C100.0%2058.9%2C100.4Q60.6%2C100.8%2061.6%2C101.2Q62.5%2C101.7%2063.0%2C102.8Z%27/%3E%3Cpath%20d%3D%27M80.8%2C125.0Q79.8%2C128.0%2079.9%2C130.2Q80.1%2C132.3%2078.0%2C135.0Q75.8%2C137.7%2071.8%2C137.0Q67.7%2C136.4%2066.0%2C133.9Q64.4%2C131.4%2066.1%2C128.6Q67.9%2C125.8%2069.4%2C124.1Q70.8%2C122.4%2073.3%2C121.1Q75.8%2C119.8%2078.8%2C120.9Q81.8%2C122.0%2080.8%2C125.0Z%27/%3E%3Cpath%20d%3D%27M94.6%2C111.1Q95.2%2C112.0%2094.4%2C112.6Q93.7%2C113.2%2093.1%2C114.1Q92.6%2C115.0%2091.6%2C114.7Q90.5%2C114.4%2090.1%2C113.5Q89.7%2C112.7%2089.6%2C112.0Q89.5%2C111.2%2089.9%2C110.3Q90.4%2C109.3%2091.4%2C109.5Q92.5%2C109.7%2093.3%2C110.0Q94.0%2C110.2%2094.6%2C111.1Z%27/%3E%3Cpath%20d%3D%27M10.5%2C127.1Q10.2%2C128.0%2010.8%2C129.2Q11.4%2C130.3%209.9%2C130.3Q8.5%2C130.3%207.2%2C130.8Q5.8%2C131.2%205.5%2C130.1Q5.2%2C128.9%205.6%2C128.1Q6.0%2C127.2%205.9%2C126.0Q5.9%2C124.8%207.3%2C124.9Q8.7%2C125.1%209.7%2C125.6Q10.7%2C126.2%2010.5%2C127.1Z%27/%3E%3Cpath%20d%3D%27M96.5%2C63.2Q96.8%2C64.0%2096.2%2C64.7Q95.6%2C65.3%2095.0%2C65.7Q94.4%2C66.0%2093.6%2C65.9Q92.9%2C65.8%2092.3%2C65.2Q91.7%2C64.7%2091.7%2C63.9Q91.7%2C63.2%2092.1%2C62.5Q92.4%2C61.8%2093.5%2C61.7Q94.5%2C61.7%2095.3%2C62.1Q96.1%2C62.4%2096.5%2C63.2Z%27/%3E%3Cpath%20d%3D%27M41.5%2C45.5Q41.8%2C46.0%2041.6%2C46.6Q41.4%2C47.2%2040.9%2C47.3Q40.3%2C47.4%2039.7%2C47.4Q39.1%2C47.4%2038.4%2C47.1Q37.7%2C46.8%2037.9%2C46.1Q38.2%2C45.4%2038.5%2C44.8Q38.8%2C44.3%2039.5%2C44.4Q40.3%2C44.5%2040.8%2C44.7Q41.3%2C44.9%2041.5%2C45.5Z%27/%3E%3Cpath%20d%3D%27M32.4%2C129.1Q32.7%2C130.0%2032.4%2C130.7Q32.0%2C131.4%2031.3%2C132.0Q30.5%2C132.6%2029.6%2C132.3Q28.7%2C132.0%2028.2%2C131.4Q27.6%2C130.7%2027.7%2C130.0Q27.8%2C129.3%2028.2%2C128.7Q28.6%2C128.2%2029.6%2C127.9Q30.5%2C127.7%2031.3%2C128.0Q32.1%2C128.3%2032.4%2C129.1Z%27/%3E%3Cpath%20d%3D%27M72.5%2C43.2Q72.6%2C44.0%2072.1%2C44.7Q71.7%2C45.5%2071.0%2C45.5Q70.3%2C45.5%2069.8%2C45.4Q69.3%2C45.3%2068.8%2C44.9Q68.4%2C44.5%2067.8%2C43.9Q67.3%2C43.2%2068.2%2C42.9Q69.1%2C42.6%2069.7%2C42.3Q70.4%2C41.9%2071.3%2C42.2Q72.3%2C42.5%2072.5%2C43.2Z%27/%3E%3C/g%3E%3C/svg%3E") center/100% 100% no-repeat, linear-gradient(160deg,#ffffff,#ecebe6);
+    box-shadow:0 2px 0 rgba(0,0,0,.25), inset 0 0 0 2px rgba(0,0,0,.12);}
+  .card.gone{background:transparent;box-shadow:inset 0 0 0 2px dashed rgba(255,255,255,.1);border:2px dashed rgba(255,255,255,.12)}
+  .card.neg{background:linear-gradient(160deg,#8a7cf0,var(--neg))}
+  .card.zero{background:linear-gradient(160deg,#47c4e0,var(--zero))}
+  .card.low{background:linear-gradient(160deg,#4fca85,var(--low))}
+  .card.mid{background:linear-gradient(160deg,#f6c34f,var(--mid));color:#3a2a05}
+  .card.high{background:linear-gradient(160deg,#f2735f,var(--high))}
+  .card.pick{cursor:pointer;box-shadow:0 0 0 3px var(--accent), 0 4px 10px rgba(0,0,0,.3)}
+  .card.pick:hover{transform:translateY(-4px)}
+  .card.flash{animation:flash 1s ease}
+  @keyframes flash{0%{transform:scale(1.15);box-shadow:0 0 0 4px #fff}100%{transform:scale(1)}}
+  .card .corner{position:absolute;top:3px;left:5px;font-size:.32em;opacity:.85}
+  .card.ghost{background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:20;overflow:hidden}
+  .card.fly{position:fixed;margin:0;transition:none;will-change:transform;
+    box-shadow:0 16px 32px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.2)}
+
+  #table{display:flex;justify-content:center;align-items:flex-end;gap:22px;margin:18px 0 10px;flex-wrap:wrap}
+  .pile{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+  .pile .count{font-size:12px}
+  .slot-empty{width:var(--cw);height:calc(var(--cw)*1.4);border-radius:10px;border:2px dashed rgba(255,255,255,.2)}
+  #heldWrap .card{transform:rotate(-4deg)}
+  #msg{text-align:center;min-height:26px;font-size:17px;margin:4px 0 12px;color:var(--accent)}
+  .mine{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px}
+  .mine .grid{gap:8px}
+
+  aside{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;align-self:start}
+  aside h3{margin:0 0 10px;font-size:16px}
+  .srow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .srow:last-child{border-bottom:none}
+  .srow .tot{font-weight:700}
+  .bar{height:5px;background:rgba(255,255,255,.1);border-radius:3px;margin:2px 0 6px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  #log{margin-top:14px;font-size:13px;color:var(--muted);max-height:220px;overflow:auto}
+  #log div{padding:3px 0;border-top:1px solid rgba(255,255,255,.05)}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(8,10,25,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .modal[hidden]{display:none}
+  .box{background:#1e1a3d;border:1px solid var(--line);border-radius:18px;padding:22px;max-width:480px;width:100%;max-height:90vh;overflow:auto}
+  .box h2{margin:0 0 12px}
+  .box table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  .box td,.box th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;font-size:15px}
+  .box th{color:var(--muted);font-weight:500}
+  .box .num{text-align:right}
+  .box ul{padding-left:20px;line-height:1.5;color:#dfe2ff}
+  .tag{font-size:12px;background:var(--high);padding:1px 6px;border-radius:6px;margin-left:4px}
+  .tag.ok{background:var(--low)}
+
+  /* finale */
+  #finale{position:fixed;inset:0;z-index:40;display:none;overflow:hidden}
+  #finale.on{display:block;animation:finIn .5s ease}
+  @keyframes finIn{from{opacity:0}to{opacity:1}}
+  #finCanvas{position:absolute;inset:0;width:100%;height:100%}
+  .neon{position:absolute;top:5vh;left:50%;transform:translateX(-50%);white-space:nowrap;
+    padding:.12em .6em .16em;border-radius:22px;font-family:'Tilt Neon','Fredoka',sans-serif;
+    font-size:clamp(40px,9vw,104px);letter-spacing:.06em;text-transform:uppercase;
+    background:rgba(4,8,24,.82);border:4px solid var(--rim);color:var(--core);
+    box-shadow:0 0 4px #fff,0 0 14px var(--n),0 0 36px var(--n),0 0 80px var(--n),inset 0 0 22px var(--n);
+    text-shadow:0 0 3px #fff,0 0 10px var(--n),0 0 24px var(--n),0 0 48px var(--n),0 0 90px var(--n)}
+  .neon.blue{--n:#1fb8ff;--rim:#bdeeff;--core:#effbff;animation:neonOn 1.8s steps(1) both}
+  .neon.red{--n:#ff2d55;--rim:#ffc4d0;--core:#fff1f4;animation:neonOn 1.8s steps(1) both, buzz 3.5s 2.2s infinite steps(1)}
+  @keyframes neonOn{0%{opacity:0}12%{opacity:1}16%{opacity:.12}22%{opacity:1}30%{opacity:.25}36%,100%{opacity:1}}
+  @keyframes buzz{0%,100%{opacity:1}40%{opacity:.3}42%{opacity:1}45%{opacity:.45}47%{opacity:1}}
+  #finale.lose #hand{display:block}
+  #hand{display:none;position:absolute;left:50%;top:0;width:min(40vw,210px);transform:translate(-50%,-105%)}
+  #hand svg{display:block;width:100%;height:auto;transform-origin:50% 0;filter:drop-shadow(0 12px 22px rgba(0,0,0,.6))}
+  #hand.go{animation:handDown 1.9s cubic-bezier(.22,.9,.3,1.05) .3s forwards}
+  #hand.go svg{animation:pump .55s 2.3s ease-in-out 4}
+  @keyframes handDown{to{transform:translate(-50%,calc(54vh - 64%))}}
+  @keyframes pump{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(26px) rotate(-4deg)}}
+  #finaleBtn{position:absolute;bottom:5vh;left:50%;transform:translateX(-50%);opacity:0;animation:finBtn .6s 3.2s forwards;font-size:17px;padding:10px 22px}
+  @keyframes finBtn{to{opacity:1}}
+
+  /* home / lobby */
+  .panel{max-width:520px;margin:34px auto;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:18px;text-align:center}
+  .panel h2{margin:0 0 6px;font-size:26px}
+  .panel p{color:var(--muted);margin:0 0 18px}
+  .field{display:flex;flex-direction:column;gap:6px;text-align:left;margin:0 auto 16px;max-width:320px;color:var(--muted);font-size:14px}
+  .inp{font-family:inherit;font-size:17px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--text);outline:none}
+  .inp:focus{border-color:var(--accent)}
+  .codeInp{text-transform:uppercase;letter-spacing:.3em;text-align:center;width:190px;font-weight:600}
+  .homeBtns{display:flex;flex-direction:column;gap:10px;max-width:340px;margin:0 auto}
+  .btn.big{font-size:17px;padding:11px 18px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .choice:disabled{opacity:.35;cursor:not-allowed}
+  .joinRow{display:flex;gap:8px;justify-content:center}
+  .divider{color:var(--muted);margin:10px 0 0;font-size:14px}
+  .note{min-height:22px;margin-top:14px;color:#ff9aa9;font-size:14px}
+  .note.ok{color:var(--muted)}
+  .codeBig{font-size:46px;letter-spacing:.22em;font-weight:700;color:var(--accent);margin:2px 0 8px;padding-left:.22em}
+  .plist{list-style:none;padding:0;margin:8px auto 18px;max-width:320px;text-align:left}
+  .plist li{padding:9px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.15)}
+  .plist small{color:var(--muted)}
+  #hostCtl[hidden]{display:none}
+  .roomTag{display:inline-block;margin:-4px 0 8px;font-size:13px;color:var(--accent);background:rgba(255,209,102,.1);padding:2px 8px;border-radius:8px;letter-spacing:.06em}
+  .roomTag[hidden]{display:none}
+  .mine[hidden]{display:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lu<span>Ma</span></h1>
+  <div class="hbtns">
+    <select class="btn" id="langSel" aria-label="Idioma / Language / Sprache">
+      <option value="pt">🇧🇷 Português</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="de">🇩🇪 Deutsch</option>
+    </select>
+    <button class="btn" id="rulesBtn" data-i18n="rules">Regras</button>
+    <button class="btn" id="newBtn" data-i18n="home">Início</button>
+  </div>
+</header>
+
+<section id="home" class="panel">
+  <h2 data-i18n="welcome"></h2>
+  <p data-i18n="intro"></p>
+  <label class="field"><span data-i18n="yourName"></span><input id="nameIn" class="inp" maxlength="16" autocomplete="off" data-i18n-ph="namePh"></label>
+  <div class="homeBtns">
+    <button class="btn big primary" id="hostBtn" data-i18n="createRoom"></button>
+    <div class="divider" data-i18n="orJoin"></div>
+    <div class="joinRow">
+      <input id="codeIn" class="inp codeInp" maxlength="6" placeholder="ABCDEF" autocomplete="off" spellcheck="false">
+      <button class="btn big" id="joinBtn" data-i18n="join"></button>
+    </div>
+    <div class="divider" data-i18n="orSolo"></div>
+    <button class="btn big" id="soloBtn" data-i18n="solo"></button>
+  </div>
+  <div class="note" id="homeNote"></div>
+</section>
+
+<section id="setup" class="panel" hidden>
+  <h2 data-i18n="solo"></h2>
+  <div style="margin:14px 0 8px;color:var(--muted)" data-i18n="howMany"></div>
+  <div class="choices" id="botChoices">
+    <button class="choice" data-n="1">1</button>
+    <button class="choice on" data-n="2">2</button>
+    <button class="choice" data-n="3">3</button>
+  </div>
+  <div style="margin-bottom:8px;color:var(--muted)" data-i18n="botSpeed"></div>
+  <div class="choices speedChoices">
+    <button class="choice" data-s="1200" data-i18n="calm"></button>
+    <button class="choice on" data-s="750" data-i18n="normal"></button>
+    <button class="choice" data-s="350" data-i18n="fast"></button>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:center">
+    <button class="btn big" id="setupBack" data-i18n="back"></button>
+    <button class="btn big primary" id="startBtn" data-i18n="start"></button>
+  </div>
+</section>
+
+<section id="lobby" class="panel" hidden>
+  <div style="color:var(--muted)" data-i18n="roomCode"></div>
+  <div class="codeBig" id="lobbyCode"></div>
+  <div style="display:flex;gap:8px;justify-content:center"><button class="btn" id="copyBtn" data-i18n="copy"></button><button class="btn" id="copyLinkBtn" data-i18n="copyLink"></button></div>
+  <p data-i18n="shareCode" style="margin-top:12px"></p>
+  <h3 style="margin:6px 0" data-i18n="playersInRoom"></h3>
+  <ul class="plist" id="lobbyList"></ul>
+  <div id="hostCtl">
+    <div style="margin-bottom:8px;color:var(--muted)" data-i18n="addBots"></div>
+    <div class="choices" id="lobbyBots">
+      <button class="choice on" data-b="0">0</button>
+      <button class="choice" data-b="1">1</button>
+      <button class="choice" data-b="2">2</button>
+      <button class="choice" data-b="3">3</button>
+    </div>
+    <div style="margin-bottom:8px;color:var(--muted)" data-i18n="botSpeed"></div>
+    <div class="choices speedChoices">
+      <button class="choice" data-s="1200" data-i18n="calm"></button>
+      <button class="choice on" data-s="750" data-i18n="normal"></button>
+      <button class="choice" data-s="350" data-i18n="fast"></button>
+    </div>
+    <button class="btn big primary" id="startOnlineBtn" data-i18n="startGame"></button>
+  </div>
+  <div class="note ok" id="lobbyWait"></div>
+  <div class="note" id="lobbyNote"></div>
+  <button class="btn" id="leaveBtn" data-i18n="leave" style="margin-top:10px"></button>
+</section>
+
+<main id="game" hidden>
+  <div>
+    <div id="opps"></div>
+    <div id="table">
+      <div class="pile"><div id="deck"></div><div><span data-i18n="deck"></span> <span class="count" id="deckCount"></span></div></div>
+      <div class="pile"><div id="discard"></div><div data-i18n="discard"></div></div>
+      <div class="pile" id="heldWrap"><div id="held"></div><div id="heldLabel"></div></div>
+    </div>
+    <div id="msg"></div>
+    <div class="mine" id="mine"></div>
+  </div>
+  <aside>
+    <h3><span data-i18n="scoreRound"></span> <span id="roundNo">1</span></h3>
+    <div id="roomTag" class="roomTag" hidden></div>
+    <div id="scores"></div>
+    <div id="log"></div>
+  </aside>
+</main>
+
+<div id="finale">
+  <canvas id="finCanvas"></canvas>
+  <div id="hand"><svg viewBox="0 0 200 440" aria-hidden="true">
+    <defs>
+      <linearGradient id="skinG" x1="0" x2="1"><stop offset="0" stop-color="#f7d2a6"/><stop offset="1" stop-color="#dfa36a"/></linearGradient>
+      <linearGradient id="slvG" x1="0" x2="1"><stop offset="0" stop-color="#5262de"/><stop offset="1" stop-color="#2c3696"/></linearGradient>
+    </defs>
+    <rect x="60" y="-20" width="80" height="228" fill="url(#slvG)"/>
+    <rect x="54" y="192" width="92" height="26" rx="9" fill="#e9ecff" stroke="#b9c0ee" stroke-width="2"/>
+    <rect x="66" y="212" width="68" height="24" fill="url(#skinG)"/>
+    <rect x="46" y="226" width="112" height="102" rx="32" fill="url(#skinG)" stroke="#b47640" stroke-width="3"/>
+    <rect x="30" y="230" width="74" height="27" rx="13.5" fill="url(#skinG)" stroke="#b47640" stroke-width="3"/>
+    <rect x="28" y="256" width="76" height="27" rx="13.5" fill="url(#skinG)" stroke="#b47640" stroke-width="3"/>
+    <rect x="30" y="282" width="74" height="27" rx="13.5" fill="url(#skinG)" stroke="#b47640" stroke-width="3"/>
+    <rect x="36" y="308" width="66" height="25" rx="12.5" fill="url(#skinG)" stroke="#b47640" stroke-width="3"/>
+    <path d="M112 262 q32 -6 38 22 l0 112 q0 22 -19 22 q-19 0 -19 -22 z" fill="url(#skinG)" stroke="#b47640" stroke-width="3"/>
+    <rect x="117" y="372" width="27" height="38" rx="11" fill="#fbe6cf" stroke="#c48a55" stroke-width="2.5"/>
+    <path d="M118 300 q10 6 22 0" fill="none" stroke="#b47640" stroke-width="2.5" stroke-linecap="round"/>
+  </svg></div>
+  <div id="neonSign" class="neon blue"></div>
+  <button class="btn primary" id="finaleBtn"></button>
+</div>
+<div id="fx"></div>
+<div class="modal" id="modal" hidden><div class="box" id="modalBox"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+const $ = s => document.querySelector(s);
+const NAMES = ['Lua','Bruma','Cometa'];
+const LIMIT = 100;
+const an = v => ((v===8||v===11||v===18)?'an ':'a ')+v;
+
+/* ---------- i18n ---------- */
+const I18N = {
+  pt: {
+    htmlLang:'pt-BR', title:'LuMa — jogo de cartas',
+    rules:'Regras', home:'Início', welcome:'Bem-vindo à mesa',
+    intro:`Faça a menor pontuação possível. O jogo acaba quando alguém chega a ${LIMIT} pontos.`,
+    yourName:'Seu nome', namePh:'Como quer ser chamado?',
+    createRoom:'Criar sala online', orJoin:'ou entre numa sala com o código:', join:'Entrar', orSolo:'ou jogue sozinho:',
+    solo:'Jogar contra bots', back:'Voltar',
+    howMany:'Quantos adversários?', botSpeed:'Velocidade das jogadas',
+    calm:'Calma', normal:'Normal', fast:'Rápida', start:'Começar',
+    roomCode:'Código da sala', copy:'Copiar código', copied:'Copiado!',
+    shareCode:'Passe o código ou o link para quem vai jogar com você.',
+    playersInRoom:'Jogadores na sala', hostTag:'anfitrião', youTag:'você',
+    addBots:'Bots extras', startGame:'Começar partida',
+    needPlayers:'É preciso pelo menos 2 jogadores (bots contam).',
+    tooMany:n=>`Só cabem 4 na mesa: ${n} vai(ão) assistir.`,
+    waitingHost:'Aguardando o anfitrião começar a partida…', connecting:'Conectando…',
+    roomNotFound:'Nenhuma sala encontrada com esse código.', badCode:'O código tem 6 letras (A–Z).',
+    onlineUnavailable:'Não foi possível conectar ao serviço online. Verifique sua internet e tente de novo.', copyLink:'Copiar link',
+    hostLeft:'O anfitrião saiu da sala.', leave:'Sair da sala', roomLabel:'Sala',
+    waitOthers:'Esperando os outros jogadores…', waitHostNext:'Aguardando o anfitrião…',
+    spectating:'Você está assistindo a esta partida.',
+    deck:'Monte', discard:'Descarte', inHand:'Na mão', inYourHand:'Na sua mão', inHandOf:n=>`Na mão de ${n}`,
+    scoreRound:'Placar · Rodada', visible:'visível', you:'Você', and:' e ',
+    flip2:'Vire 2 das suas cartas para começar.', flip1:'Vire mais 1 carta.', dealing:'Distribuindo as cartas…',
+    yourTurn:'Sua vez: compre do monte ou pegue do descarte.',
+    lastTurn:'Última jogada! Compre do monte ou pegue do descarte.',
+    botTurn:n=>`Vez de ${n}…`, playerFlip:n=>`${n} vai virar uma carta…`,
+    drew:v=>`Você comprou ${v}. Troque com uma carta sua, ou clique no descarte para jogá-la fora.`,
+    took:v=>`Você pegou ${v}. Escolha qual carta sua trocar (ou clique no descarte para devolver).`,
+    mustSwap:'Você não tem carta escondida para virar: precisa trocar.',
+    flipNow:'Agora vire uma das suas cartas escondidas.',
+    botTakes:(n,y,v)=>`${n} pegou o ${v} do descarte…`, botDraws:n=>`${n} comprou do monte…`,
+    revealing:'Revelando todas as cartas…',
+    roundHdr:r=>`— Rodada ${r} —`,
+    starts:(n,y,c)=>`${n} começa ${c?'(fechou a rodada anterior)':'(maior soma visível)'}.`,
+    reshuffle:'Monte embaralhado de novo a partir do descarte.',
+    colClear:(n,y,v)=>`${n} completou uma coluna de ${v} e ela saiu da mesa!`,
+    revealedAll:n=>`${n} revelou todas as cartas! Os outros têm mais uma jogada.`,
+    tookSwap:(n,y,v,o)=>`${n} pegou ${v} do descarte e trocou por ${o}.`,
+    drewSwap:(n,y,v,o)=>`${n} comprou ${v} e trocou por ${o}.`,
+    discardFlip:(n,y,v,f)=>`${n} descartou ${v} e virou um ${f}.`,
+    seatBot:n=>`${n} saiu da sala — um bot assumiu o lugar.`,
+    gameOver:'Fim de jogo', roundOver:r=>`Fim da rodada ${r}`, player:'Jogador', cards:'Cartas', roundCol:'Rodada', total:'Total',
+    closedDoubled:'fechou · dobrado', closed:'fechou',
+    tieWin:'Empate na liderança! Você está entre os vencedores 🎉', youWin:'Você venceu! 🎉',
+    winOf:(s,many)=>`Vitória de ${s}.`,
+    viewTable:'Ver mesa', playAgain:'Jogar de novo', nextRound:'Próxima rodada', howToPlay:'Como jogar', gotIt:'Entendi',
+    winnerSign:'Vencedor', loserSign:'Perdedor', seeScores:'Ver placar',
+    rulesList:[
+      'Cada jogador tem 12 cartas viradas para baixo, em 3 linhas e 4 colunas. As cartas vão de −2 a 12.',
+      'No início, vire 2 cartas. Quem tiver a maior soma começa (nas rodadas seguintes, começa quem fechou a anterior).',
+      'Na sua vez, <b>pegue a carta do descarte</b> e troque por uma das suas, <b>ou compre do monte</b>: aí você pode trocar, ou descartá-la e virar uma carta escondida.',
+      'A carta trocada vai para o descarte, revelada.',
+      'Três cartas iguais e visíveis na mesma coluna saem da mesa e não contam pontos.',
+      'Quando alguém revela todas as cartas, cada outro jogador tem mais uma jogada. Depois, tudo é revelado e somado.',
+      'Quem fechou a rodada sem ter a menor pontuação (estritamente) tem seus pontos dobrados, se forem positivos.',
+      `Quando alguém chega a ${LIMIT}, o jogo acaba. Vence quem tiver menos pontos.`,
+      'Online: quem cria a sala recebe um código de 6 letras; os outros entram com esse código. A mesa tem até 4 lugares.'
+    ]
+  },
+  en: {
+    htmlLang:'en', title:'LuMa — card game',
+    rules:'Rules', home:'Home', welcome:'Welcome to the table',
+    intro:`Score as few points as possible. The game ends when someone reaches ${LIMIT} points.`,
+    yourName:'Your name', namePh:'What should we call you?',
+    createRoom:'Create online room', orJoin:'or join a room with its code:', join:'Join', orSolo:'or play on your own:',
+    solo:'Play against bots', back:'Back',
+    howMany:'How many opponents?', botSpeed:'Play speed',
+    calm:'Relaxed', normal:'Normal', fast:'Fast', start:'Start',
+    roomCode:'Room code', copy:'Copy code', copied:'Copied!',
+    shareCode:'Share the code or the link with the people playing with you.',
+    playersInRoom:'Players in the room', hostTag:'host', youTag:'you',
+    addBots:'Extra bots', startGame:'Start game',
+    needPlayers:'You need at least 2 players (bots count).',
+    tooMany:n=>`Only 4 fit at the table: ${n} will watch.`,
+    waitingHost:'Waiting for the host to start the game…', connecting:'Connecting…',
+    roomNotFound:'No room found with that code.', badCode:'The code is 6 letters (A–Z).',
+    onlineUnavailable:'Couldn’t reach the online service. Check your connection and try again.', copyLink:'Copy link',
+    hostLeft:'The host left the room.', leave:'Leave room', roomLabel:'Room',
+    waitOthers:'Waiting for the other players…', waitHostNext:'Waiting for the host…',
+    spectating:'You are watching this game.',
+    deck:'Deck', discard:'Discard', inHand:'In hand', inYourHand:'In your hand', inHandOf:n=>`In ${n}'s hand`,
+    scoreRound:'Score · Round', visible:'visible', you:'You', and:' and ',
+    flip2:'Flip 2 of your cards to begin.', flip1:'Flip 1 more card.', dealing:'Dealing the cards…',
+    yourTurn:'Your turn: draw from the deck or take the discard.',
+    lastTurn:'Last turn! Draw from the deck or take the discard.',
+    botTurn:n=>`${n}'s turn…`, playerFlip:n=>`${n} is about to flip a card…`,
+    drew:v=>`You drew ${an(v)}. Swap it with one of your cards, or click the discard pile to throw it away.`,
+    took:v=>`You took the ${v}. Choose which of your cards to swap (or click the discard pile to put it back).`,
+    mustSwap:'You have no face-down card left to flip: you must swap.',
+    flipNow:'Now flip one of your face-down cards.',
+    botTakes:(n,y,v)=>`${n} took the ${v} from the discard…`, botDraws:n=>`${n} drew from the deck…`,
+    revealing:'Revealing all cards…',
+    roundHdr:r=>`— Round ${r} —`,
+    starts:(n,y,c)=>`${y?'You start':n+' starts'} ${c?'(ended the previous round)':'(highest visible total)'}.`,
+    reshuffle:'The discard pile was reshuffled into a new deck.',
+    colClear:(n,y,v)=>`${n} completed a column of ${v} and it left the table!`,
+    revealedAll:(n,y)=>`${n} ${y?'have':'has'} revealed every card! Everyone else gets one more turn.`,
+    tookSwap:(n,y,v,o)=>`${n} took the ${v} from the discard and swapped out ${an(o)}.`,
+    drewSwap:(n,y,v,o)=>`${n} drew ${an(v)} and swapped out ${an(o)}.`,
+    discardFlip:(n,y,v,f)=>`${n} discarded ${an(v)} and flipped ${an(f)}.`,
+    seatBot:n=>`${n} left the room — a bot took over the seat.`,
+    gameOver:'Game over', roundOver:r=>`End of round ${r}`, player:'Player', cards:'Cards', roundCol:'Round', total:'Total',
+    closedDoubled:'ended · doubled', closed:'ended',
+    tieWin:'Tied for the lead! You are among the winners 🎉', youWin:'You won! 🎉',
+    winOf:(s,many)=>`${s} ${many?'win':'wins'}.`,
+    viewTable:'View table', playAgain:'Play again', nextRound:'Next round', howToPlay:'How to play', gotIt:'Got it',
+    winnerSign:'Winner', loserSign:'Loser', seeScores:'See scores',
+    rulesList:[
+      'Each player has 12 face-down cards in 3 rows and 4 columns. Cards range from −2 to 12.',
+      'At the start, flip 2 cards. The highest total goes first (in later rounds, whoever ended the previous round goes first).',
+      'On your turn, <b>take the top discard</b> and swap it with one of your cards, <b>or draw from the deck</b>: then either swap it, or discard it and flip one face-down card.',
+      'The card you replace goes face up onto the discard pile.',
+      'Three matching face-up cards in the same column leave the table and score nothing.',
+      'When someone reveals all their cards, every other player gets one more turn. Then everything is revealed and added up.',
+      'If the player who ended the round does not have the strictly lowest score, their points are doubled (when positive).',
+      `When someone reaches ${LIMIT}, the game ends. The lowest total wins.`,
+      'Online: whoever creates a room gets a 6-letter code; the others join with it. The table seats up to 4.'
+    ]
+  },
+  de: {
+    htmlLang:'de', title:'LuMa — Kartenspiel',
+    rules:'Regeln', home:'Start', welcome:'Willkommen am Tisch',
+    intro:`Sammle so wenige Punkte wie möglich. Das Spiel endet, sobald jemand ${LIMIT} Punkte erreicht.`,
+    yourName:'Dein Name', namePh:'Wie sollen wir dich nennen?',
+    createRoom:'Online-Raum erstellen', orJoin:'oder tritt einem Raum mit Code bei:', join:'Beitreten', orSolo:'oder spiel allein:',
+    solo:'Gegen Bots spielen', back:'Zurück',
+    howMany:'Wie viele Gegner?', botSpeed:'Spieltempo',
+    calm:'Gemütlich', normal:'Normal', fast:'Schnell', start:'Los geht’s',
+    roomCode:'Raumcode', copy:'Code kopieren', copied:'Kopiert!',
+    shareCode:'Gib den Code oder den Link an deine Mitspieler weiter.',
+    playersInRoom:'Spieler im Raum', hostTag:'Gastgeber', youTag:'du',
+    addBots:'Zusätzliche Bots', startGame:'Spiel starten',
+    needPlayers:'Es braucht mindestens 2 Spieler (Bots zählen mit).',
+    tooMany:n=>`Nur 4 passen an den Tisch: ${n} schauen zu.`,
+    waitingHost:'Warte darauf, dass der Gastgeber das Spiel startet…', connecting:'Verbinde…',
+    roomNotFound:'Kein Raum mit diesem Code gefunden.', badCode:'Der Code besteht aus 6 Buchstaben (A–Z).',
+    onlineUnavailable:'Der Online-Dienst ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.', copyLink:'Link kopieren',
+    hostLeft:'Der Gastgeber hat den Raum verlassen.', leave:'Raum verlassen', roomLabel:'Raum',
+    waitOthers:'Warte auf die anderen Spieler…', waitHostNext:'Warte auf den Gastgeber…',
+    spectating:'Du schaust diesem Spiel zu.',
+    deck:'Stapel', discard:'Ablage', inHand:'In der Hand', inYourHand:'In deiner Hand', inHandOf:n=>`In der Hand von ${n}`,
+    scoreRound:'Punkte · Runde', visible:'sichtbar', you:'Du', and:' und ',
+    flip2:'Decke 2 deiner Karten auf, um zu beginnen.', flip1:'Decke noch 1 Karte auf.', dealing:'Karten werden ausgeteilt…',
+    yourTurn:'Du bist dran: Ziehe vom Stapel oder nimm die Karte von der Ablage.',
+    lastTurn:'Letzter Zug! Ziehe vom Stapel oder nimm die Karte von der Ablage.',
+    botTurn:n=>`${n} ist dran…`, playerFlip:n=>`${n} deckt gleich eine Karte auf…`,
+    drew:v=>`Du hast eine ${v} gezogen. Tausche sie gegen eine deiner Karten oder klicke auf die Ablage, um sie abzuwerfen.`,
+    took:v=>`Du hast die ${v} genommen. Wähle die Karte, die du tauschen willst (oder klicke auf die Ablage, um sie zurückzulegen).`,
+    mustSwap:'Du hast keine verdeckte Karte mehr: Du musst tauschen.',
+    flipNow:'Decke jetzt eine deiner verdeckten Karten auf.',
+    botTakes:(n,y,v)=>`${n} nimmt die ${v} von der Ablage…`, botDraws:n=>`${n} zieht vom Stapel…`,
+    revealing:'Alle Karten werden aufgedeckt…',
+    roundHdr:r=>`— Runde ${r} —`,
+    starts:(n,y,c)=>`${y?'Du beginnst':n+' beginnt'} ${c?(y?'(du hast die letzte Runde beendet)':'(hat die letzte Runde beendet)'):'(höchste sichtbare Summe)'}.`,
+    reshuffle:'Die Ablage wurde zu einem neuen Stapel gemischt.',
+    colClear:(n,y,v)=>`${y?'Du hast':n+' hat'} eine Spalte mit ${v} vervollständigt – sie verschwindet vom Tisch!`,
+    revealedAll:(n,y)=>`${y?'Du hast':n+' hat'} alle Karten aufgedeckt! Alle anderen haben noch einen Zug.`,
+    tookSwap:(n,y,v,o)=>y?`Du hast die ${v} von der Ablage genommen und eine ${o} ausgetauscht.`:`${n} nahm die ${v} von der Ablage und tauschte eine ${o} aus.`,
+    drewSwap:(n,y,v,o)=>y?`Du hast eine ${v} gezogen und eine ${o} ausgetauscht.`:`${n} zog eine ${v} und tauschte eine ${o} aus.`,
+    discardFlip:(n,y,v,f)=>y?`Du hast eine ${v} abgeworfen und eine ${f} aufgedeckt.`:`${n} warf eine ${v} ab und deckte eine ${f} auf.`,
+    seatBot:n=>`${n} hat den Raum verlassen – ein Bot übernimmt den Platz.`,
+    gameOver:'Spielende', roundOver:r=>`Ende von Runde ${r}`, player:'Spieler', cards:'Karten', roundCol:'Runde', total:'Gesamt',
+    closedDoubled:'beendet · verdoppelt', closed:'beendet',
+    tieWin:'Gleichstand an der Spitze! Du gehörst zu den Gewinnern 🎉', youWin:'Du hast gewonnen! 🎉',
+    winOf:(s,many)=>`${s} ${many?'gewinnen':'gewinnt'}.`,
+    viewTable:'Tisch ansehen', playAgain:'Nochmal spielen', nextRound:'Nächste Runde', howToPlay:'So wird gespielt', gotIt:'Verstanden',
+    winnerSign:'Gewinner', loserSign:'Verlierer', seeScores:'Punkte ansehen',
+    rulesList:[
+      'Jeder hat 12 verdeckte Karten in 3 Reihen und 4 Spalten. Die Karten reichen von −2 bis 12.',
+      'Zu Beginn deckst du 2 Karten auf. Die höchste Summe beginnt (in späteren Runden beginnt, wer die vorige Runde beendet hat).',
+      'In deinem Zug <b>nimmst du die oberste Karte der Ablage</b> und tauschst sie gegen eine deiner Karten, <b>oder du ziehst vom Stapel</b>: Dann tauschst du sie, oder du wirfst sie ab und deckst eine verdeckte Karte auf.',
+      'Die ersetzte Karte kommt offen auf die Ablage.',
+      'Drei gleiche, offene Karten in derselben Spalte verlassen den Tisch und zählen nicht.',
+      'Hat jemand alle Karten aufgedeckt, hat jeder andere noch einen Zug. Danach wird alles aufgedeckt und gezählt.',
+      'Hat die Person, die die Runde beendet hat, nicht strikt die wenigsten Punkte, verdoppeln sich ihre Punkte (wenn positiv).',
+      `Erreicht jemand ${LIMIT} Punkte, endet das Spiel. Die niedrigste Summe gewinnt.`,
+      'Online: Wer einen Raum erstellt, bekommt einen 6-Buchstaben-Code; die anderen treten damit bei. Am Tisch ist Platz für bis zu 4.'
+    ]
+  }
+};
+let lang='pt';
+try{ const s=localStorage.getItem('doze-lang'); if(s&&I18N[s]) lang=s; else { const n=(navigator.language||'').toLowerCase(); lang=n.startsWith('de')?'de':n.startsWith('en')?'en':'pt'; } }catch(e){}
+const L = () => I18N[lang];
+
+/* ---------- state ---------- */
+let G=null, speed=750, nBots=2, lobbyBots=0;
+let MODE='solo';            // 'solo' | 'host' | 'client'
+let mySeat=0;
+let myName='';
+try{ myName=localStorage.getItem('luma-name')||''; }catch(e){}
+const net={roomP:null, named:null, code:null, me:null, seen:{}, order:[], reqSeq:0, latest:null,
+  queue:[], pumping:false, lastApplied:0, lastQueued:0, pending:false, pendT:null, hostPeer:null, joinTimer:null};
+let qTail=Promise.resolve(), qLen=0, currentModal=null;
+
+function cleanName(s){ return String(s==null?'':s).replace(/[^\p{L}\p{N} _.'-]/gu,'').replace(/\s+/g,' ').trim().slice(0,16); }
+const nm = pi => { if(pi===mySeat && pi>=0) return L().you; const s=G&&G.seats&&G.seats[pi]; return s?(cleanName(s.n)||'?'):'?'; };
+function tr(e){
+  const f=L()[e.k];
+  if(f===undefined) return '';
+  if(typeof f!=='function') return f;
+  const a=e.a||[];
+  return (e.pi!==undefined && e.pi!==null) ? f(nm(e.pi), e.pi===mySeat, ...a) : f(...a);
+}
+function log(k, pi, ...a){ if(MODE==='client'||!G) return; G.log.unshift({k,pi:(pi===undefined?null:pi),a}); if(G.log.length>30)G.log.pop(); }
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function makeDeck(){
+  const d=[];
+  for(let i=0;i<5;i++)d.push(-2);
+  for(let i=0;i<10;i++)d.push(-1);
+  for(let i=0;i<15;i++)d.push(0);
+  for(let v=1;v<=12;v++)for(let i=0;i<10;i++)d.push(v);
+  return shuffle(d);
+}
+const cls = v => v<0?'neg':v===0?'zero':v<=4?'low':v<=8?'mid':'high';
+const colIdx = c => [c*3,c*3+1,c*3+2];
+const topDiscard = () => G.discard[G.discard.length-1];
+const downIdx = p => p.grid.map((c,i)=>(!c.gone&&!c.up)?i:-1).filter(i=>i>=0);
+const allUp = p => p.grid.every(c=>c.gone||c.up);
+const visibleSum = p => p.grid.reduce((s,c)=>s+(!c.gone&&c.up?c.v:0),0);
+const est = p => p.grid.reduce((s,c)=>s+(c.gone?0:(c.up?c.v:5)),0);
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+const DUR = () => Math.round(Math.max(260, Math.min(650, speed*0.6)));
+const slotKey = (pi,i) => `p${pi}-${i}`;
+const busy = () => !G || G.anim>0 || (MODE==='client' ? net.pending : qLen>0);
+const isBot = pi => G.seats[pi] && G.seats[pi].k==='b';
+function hasComplete(p){ for(let c=0;c<4;c++){ const cells=colIdx(c).map(i=>p.grid[i]); if(cells.every(x=>!x.gone&&x.up)&&cells.every(x=>x.v===cells[0].v)) return true; } return false; }
+
+function newState(){
+  return {gid:null, seats:[], players:[], round:0, log:[], hide:new Set(), hideDiscard:0, anim:0,
+    discard:[], deck:[], deckN:0, held:null, phase:'deal', current:-1, ender:null, prevEnder:null,
+    result:null, mid:0, moves:[], note:null, showBtn:false, lastToss:null};
+}
+
+/* ---------- animation engine ---------- */
+function rectOf(k){ const e=document.querySelector(`[data-key="${k}"]`); return e?e.getBoundingClientRect():null; }
+function fly(from,to,{v,startUp,endUp,dur}){
+  if(!from||!to||document.hidden) return Promise.resolve();
+  dur = dur||DUR();
+  const el=document.createElement('div');
+  const setFace = up => { el.className='card fly '+(up?cls(v):'back'); el.textContent=up?v:''; };
+  setFace(startUp);
+  Object.assign(el.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px',height:from.height+'px',
+    fontSize:(from.width*0.46)+'px',borderRadius:(from.width*0.15)+'px'});
+  $('#fx').appendChild(el);
+  const dx=(to.left+to.width/2)-(from.left+from.width/2);
+  const dy=(to.top+to.height/2)-(from.top+from.height/2);
+  const sx=to.width/from.width, sy=to.height/from.height;
+  const flip=startUp!==endUp;
+  const dist=Math.hypot(dx,dy);
+  const lift=Math.min(70, 16+dist*0.15);
+  const ms=(1+sx)/2*1.12, my=(1+sy)/2*1.12;
+  const rot=dx===0?0:(dx>0?7:-7);
+  const kf=[
+    {transform:'translate(0px,0px) rotate(0deg) scale(1,1)'},
+    {transform:`translate(${dx/2}px,${dy/2-lift}px) rotate(${rot}deg) scale(${flip?0.03:ms},${my})`, offset:.5},
+    {transform:`translate(${dx}px,${dy}px) rotate(0deg) scale(${sx},${sy})`}
+  ];
+  let anim;
+  try{ anim=el.animate(kf,{duration:dur,easing:'ease-in-out',fill:'forwards'}); }
+  catch(e){ el.remove(); return Promise.resolve(); }
+  if(flip) setTimeout(()=>setFace(endUp), dur/2);
+  // a background tab may pause animations: never let the game wait on one for long
+  return Promise.race([anim.finished.catch(()=>{}), wait(dur+400)]).then(()=>el.remove());
+}
+
+async function animDeal(){
+  const g=G, n=G.players.length;
+  const stag=Math.max(16, speed*0.035), d=Math.max(240, DUR()*0.75);
+  const deckR=rectOf('deck'), flights=[];
+  let k=0;
+  for(let i=0;i<12;i++) for(let pi=0;pi<n;pi++){
+    const key=slotKey(pi,i), to=rectOf(key);
+    flights.push(wait(k++*stag).then(()=>fly(deckR,to,{v:0,startUp:false,endUp:false,dur:d})).then(()=>{ if(G!==g)return; G.hide.delete(key); render(); }));
+  }
+  await Promise.all(flights);
+  if(G!==g) return;
+  await fly(rectOf('deck'), rectOf('discard'), {v:G.discard[0],startUp:false,endUp:true});
+  if(G!==g) return;
+  G.hideDiscard=0; render();
+}
+async function animFlip(pi,i){
+  const g=G, key=slotKey(pi,i), c=G.players[pi].grid[i], r=rectOf(key);
+  c.up=true; G.hide.add(key); render();
+  await fly(r,r,{v:c.v,startUp:false,endUp:true});
+  if(G!==g) return;
+  G.hide.delete(key); render();
+}
+async function animDraw(v){
+  const g=G, from=rectOf('deck');
+  G.held=v; G.hide.add('held'); render();
+  await fly(from, rectOf('held'), {v,startUp:false,endUp:true});
+  if(G!==g) return;
+  G.hide.delete('held'); render();
+}
+async function animTakeDiscard(){
+  const g=G, from=rectOf('discard');
+  const v=G.discard.pop(); G.held=v; G.hide.add('held'); render();
+  await fly(from, rectOf('held'), {v,startUp:true,endUp:true});
+  if(G!==g) return;
+  G.hide.delete('held'); render();
+}
+async function animDiscardHeld(){
+  const g=G, from=rectOf('held'), v=G.held;
+  G.discard.push(v); G.held=null; G.hideDiscard++; render();
+  await fly(from, rectOf('discard'), {v,startUp:true,endUp:true});
+  if(G!==g) return;
+  G.hideDiscard--; render();
+}
+async function animPlace(pi,i){
+  const g=G, key=slotKey(pi,i), c=G.players[pi].grid[i];
+  const old=c.v, wasUp=c.up, v=G.held;
+  const rSlot=rectOf(key), rHeld=rectOf('held');
+  G.discard.push(old); G.hideDiscard++; c.v=v; c.up=true; G.held=null; G.hide.add(key); render();
+  const rDis=rectOf('discard');
+  const a=fly(rSlot,rDis,{v:old,startUp:wasUp,endUp:true}).then(()=>{ if(G!==g)return; G.hideDiscard--; render(); });
+  const b=wait(DUR()*0.4).then(()=>fly(rHeld,rSlot,{v,startUp:true,endUp:true})).then(()=>{ if(G!==g)return; G.hide.delete(key); render(); });
+  await Promise.all([a,b]);
+}
+async function animClear(pi){
+  const g=G, p=G.players[pi], flights=[], moving=[];
+  for(let c=0;c<4;c++){
+    const idx=colIdx(c), cells=idx.map(i=>p.grid[i]);
+    if(cells.every(x=>!x.gone&&x.up) && cells.every(x=>x.v===cells[0].v)){
+      idx.forEach(i=>moving.push({r:rectOf(slotKey(pi,i)), v:p.grid[i].v}));
+      cells.forEach(x=>{x.gone=true; G.discard.push(x.v);});
+      G.hideDiscard+=3;
+      log('colClear', pi, cells[0].v);
+    }
+  }
+  if(!moving.length) return;
+  render();
+  const dr=rectOf('discard');
+  moving.forEach((m,k)=>flights.push(wait(k*110).then(()=>fly(m.r,dr,{v:m.v,startUp:true,endUp:true})).then(()=>{ if(G!==g)return; G.hideDiscard--; render(); })));
+  await Promise.all(flights);
+}
+async function animReveal(pi){
+  const d=downIdx(G.players[pi]);
+  await Promise.all(d.map((i,k)=>wait(k*70).then(()=>animFlip(pi,i))));
+}
+
+/* ---------- moves: the one path every visible change takes (host and guests) ---------- */
+async function applyMove(m){
+  const g=G; G.anim++; render();
+  try{
+    switch(m.t){
+      case 'deal': {
+        G.round=m.r; G.ender=null; G.held=null; G.result=null; G.showBtn=false; G.discard=[m.d]; G.deckN=m.n;
+        G.phase='deal'; G.current=-1;
+        if(MODE==='client') G.players.forEach(p=>p.grid=Array.from({length:12},()=>({v:null,up:false,gone:false})));
+        G.hide=new Set(); G.players.forEach((p,pi)=>{ for(let i=0;i<12;i++) G.hide.add(slotKey(pi,i)); }); G.hideDiscard=1;
+        closeModal(); stopFinale(); show('game'); render();
+        await wait(150); await animDeal(); break;
+      }
+      case 'flip': { const c=G.players[m.p].grid[m.i]; c.v=m.v; if(G.phase==='flip') G.phase='wait'; await animFlip(m.p,m.i); break; }
+      case 'draw': { if(m.rs) G.discard=[G.discard[G.discard.length-1]]; G.deckN=m.n; G.phase='holdDeck'; await animDraw(m.v); break; }
+      case 'take': { G.phase='holdDiscard'; await animTakeDiscard(); break; }
+      case 'place': { const c=G.players[m.p].grid[m.i]; c.v=m.old; G.phase='wait'; await animPlace(m.p,m.i); break; }
+      case 'toss': { G.phase=m.back?'choose':'flip'; await animDiscardHeld(); break; }
+      case 'clear': await animClear(m.p); break;
+      case 'turn': G.current=m.c; G.phase=m.ph; G.ender=(m.e===undefined?null:m.e); break;
+      case 'reveal': {
+        m.g.forEach((arr,pi)=>arr.forEach((v,i)=>{ const c=G.players[pi]&&G.players[pi].grid[i]; if(c && v!==null && !c.up && !c.gone) c.v=v; }));
+        await Promise.all(G.players.map((p,pi)=>animReveal(pi))); break;
+      }
+      case 'res': {
+        G.players.forEach((p,i)=>p.total=Number(m.tot[i])||0);
+        G.result={raw:m.raw,pts:m.pts,e:m.e,doubled:!!m.dbl,over:!!m.over}; G.phase='over';
+        render(); showEnd(); break;
+      }
+      case 'new': G.players.forEach(p=>p.total=0); G.prevEnder=null; G.showBtn=false; closeModal(); stopFinale(); break;
+      case 'seat': if(G.seats[m.p]) G.seats[m.p].k='b'; break;
+    }
+  } finally { if(G===g){ G.anim--; render(); } }
+}
+
+/* ---------- host: authoritative engine ---------- */
+function enqueue(fn){
+  qLen++; render();
+  qTail=qTail.then(()=>fn()).catch(e=>console.error(e)).finally(()=>{ qLen--; render(); });
+}
+async function hEmit(m){
+  const g=G;
+  m.id=++G.mid; G.moves.push(m); if(G.moves.length>24) G.moves.shift();
+  const p=applyMove(m); publish(); await p;
+  if(G===g) publish();
+}
+function snapOf(){
+  return {mid:G.mid, r:G.round, ph:G.phase, c:G.current, e:G.ender, dn:G.deck.length, d:G.discard.slice(-3), h:G.held,
+    g:G.players.map(p=>p.grid.map(c=>c.gone?'x':c.up?c.v:'?').join(',')),
+    tot:G.players.map(p=>p.total), lg:G.log.slice(0,7).map(e=>[e.k,e.pi,...(e.a||[])])};
+}
+function buildState(){
+  const st={gid:G.gid, sp:speed, seats:G.seats.map(s=>({n:s.n,k:s.k,p:s.peer||null})), moves:G.moves.slice(), snap:snapOf()};
+  const size=()=>new TextEncoder().encode(JSON.stringify(st)).length;
+  while(size()>3500 && st.moves.length>1) st.moves.shift();
+  while(size()>3500 && st.snap.lg.length) st.snap.lg.pop();
+  return st;
+}
+function hostPresence(){
+  if(MODE!=='host'||!net.named) return;
+  const p={role:'host', code:net.code, n:myName, lobby:G?[]:lobbyPlayers().map(x=>cleanName(x.presence.n)), st:G?buildState():null};
+  net.named.presence(p).catch(()=>{});
+}
+function publish(){ if(MODE==='host') hostPresence(); }
+
+function newHostGame(seats){
+  G=newState(); G.gid=Math.random().toString(36).slice(2,9); G.seats=seats;
+  G.players=seats.map(()=>({total:0,grid:Array.from({length:12},()=>({v:0,up:false,gone:true}))}));
+  show('game'); render();
+  enqueue(startRound);
+}
+function hostDraw(){
+  let rs=0;
+  if(G.deck.length===0){ const t=G.discard.pop(); G.deck=shuffle(G.discard); G.discard=[t]; rs=1; log('reshuffle'); }
+  return {v:G.deck.pop(), rs};
+}
+async function startRound(){
+  G.round++; G.deck=makeDeck();
+  G.players.forEach(p=>p.grid=Array.from({length:12},()=>({v:G.deck.pop(),up:false,gone:false})));
+  const d=G.deck.pop(); G.discard=[d];
+  log('roundHdr', null, G.round);
+  await hEmit({t:'deal', r:G.round, d, n:G.deck.length});
+  await Promise.all(G.seats.map((s,pi)=>s.k==='b'?botInitialFlips(pi):null));
+  await hEmit({t:'turn', c:-1, ph:'initialFlip', e:null});
+  await checkAllFlipped();
+}
+async function botInitialFlips(pi){
+  const p=G.players[pi]; const need=2-p.grid.filter(c=>c.up).length;
+  for(const i of shuffle(downIdx(p)).slice(0,Math.max(0,need))){ await hEmit({t:'flip',p:pi,i,v:p.grid[i].v}); await wait(80); }
+}
+async function checkAllFlipped(){
+  if(G.phase!=='initialFlip') return;
+  if(G.players.every(p=>p.grid.filter(c=>c.up).length>=2)){ await wait(350); await beginPlay(); }
+}
+async function beginPlay(){
+  let s;
+  if(G.prevEnder!==null) s=G.prevEnder;
+  else { let best=-99; G.players.forEach((p,i)=>{const v=visibleSum(p); if(v>best){best=v;s=i;}}); }
+  log('starts', s, G.prevEnder!==null);
+  await beginTurn(s);
+}
+async function beginTurn(c){
+  await hEmit({t:'turn', c, ph:'choose', e:G.ender});
+  if(isBot(c)){ await wait(speed*0.6); await botTurn(c); }
+}
+async function endTurn(){
+  const seat=G.current, p=G.players[seat];
+  if(hasComplete(p)) await hEmit({t:'clear', p:seat});
+  if(G.ender===null && allUp(p)){ G.ender=seat; log('revealedAll', seat); }
+  const next=(seat+1)%G.players.length;
+  if(G.ender!==null && next===G.ender){ await wait(350); await endRound(); return; }
+  await beginTurn(next);
+}
+async function endRound(){
+  await hEmit({t:'turn', c:-1, ph:'over', e:G.ender});
+  const g=G.players.map(p=>p.grid.map(c=>(!c.up&&!c.gone)?c.v:null));
+  await hEmit({t:'reveal', g});
+  for(let pi=0;pi<G.players.length;pi++) if(hasComplete(G.players[pi])) await hEmit({t:'clear', p:pi});
+  await wait(400);
+  const raw=G.players.map(p=>p.grid.reduce((s,c)=>s+(c.gone?0:c.v),0));
+  const e=G.ender, pts=raw.slice(); let dbl=false;
+  if(raw[e]>0 && raw.some((r,i)=>i!==e && r<=raw[e])){ pts[e]=raw[e]*2; dbl=true; }
+  const tot=G.players.map((p,i)=>p.total+pts[i]);
+  G.prevEnder=e;
+  await hEmit({t:'res', raw, pts, e, dbl, tot, over:tot.some(t=>t>=LIMIT)});
+}
+function hostNextRound(){ closeModal(); G.showBtn=false; render(); enqueue(startRound); }
+function hostPlayAgain(){ closeModal(); stopFinale(); G.showBtn=false; enqueue(async()=>{ await hEmit({t:'new'}); await startRound(); }); }
+
+// a human action, from the host's own clicks or from a guest's request
+async function act(seat,a,i){
+  if(!G || !G.seats[seat] || G.seats[seat].k==='b') return;
+  const p=G.players[seat];
+  if(G.phase==='initialFlip'){
+    if(a!=='slot') return;
+    const c=p.grid[i]; if(!c||c.up||c.gone||p.grid.filter(x=>x.up).length>=2) return;
+    await hEmit({t:'flip',p:seat,i,v:c.v});
+    await checkAllFlipped(); return;
+  }
+  if(seat!==G.current) return;
+  if(G.phase==='choose'){
+    if(a==='deck'){ const {v,rs}=hostDraw(); await hEmit({t:'draw',p:seat,v,n:G.deck.length,rs}); }
+    else if(a==='discard' && G.discard.length) await hEmit({t:'take',p:seat});
+  } else if(G.phase==='holdDeck'||G.phase==='holdDiscard'){
+    if(a==='slot'){
+      const c=p.grid[i]; if(!c||c.gone) return;
+      const v=G.held, old=c.v;
+      log(G.phase==='holdDiscard'?'tookSwap':'drewSwap', seat, v, old);
+      await hEmit({t:'place',p:seat,i,old});
+      await endTurn();
+    } else if(a==='discard'){
+      if(G.phase==='holdDiscard') await hEmit({t:'toss',p:seat,back:1});
+      else { if(!downIdx(p).length) return; G.lastToss=G.held; await hEmit({t:'toss',p:seat}); }
+    }
+  } else if(G.phase==='flip'){
+    const c=p.grid[i]; if(a!=='slot'||!c||c.up||c.gone) return;
+    log('discardFlip', seat, G.lastToss, c.v);
+    await hEmit({t:'flip',p:seat,i,v:c.v});
+    await endTurn();
+  }
+}
+
+/* ---------- bots (run by the host) ---------- */
+function othersMin(p){ return Math.min(...G.players.filter(q=>q!==p).map(est)); }
+function risky(p, after){ return G.ender===null && after>0 && after >= othersMin(p)-1; }
+function scorePlacement(p,i,v){
+  const g=p.grid, c=g[i]; if(c.gone) return -Infinity;
+  const curV=c.up?c.v:5;
+  let gain=curV-v;
+  const others=colIdx(Math.floor(i/3)).filter(j=>j!==i).map(j=>g[j]);
+  if(others.every(o=>!o.gone&&o.up&&o.v===v)) gain=curV+2*v+1;
+  else if(v>0 && others.some(o=>!o.gone&&o.up&&o.v===v)) gain+=1.5;
+  if(c.up && c.v>0 && others.some(o=>!o.gone&&o.up&&o.v===c.v) && !(others.every(o=>o.up&&o.v===c.v))) gain-=1.5;
+  if(!c.up && downIdx(p).length===1 && risky(p, est(p)-5+v)) gain-=25;
+  return gain;
+}
+function bestPlacement(p,v,onlyUp){
+  let best={i:-1,gain:-Infinity};
+  p.grid.forEach((c,i)=>{ if(c.gone||(onlyUp&&!c.up))return; const g=scorePlacement(p,i,v); if(g>best.gain)best={i,gain:g}; });
+  return best;
+}
+function chooseFlip(p){
+  const d=downIdx(p);
+  const pref=d.filter(i=>{const o=colIdx(Math.floor(i/3)).filter(j=>j!==i).map(j=>p.grid[j]);return o.every(x=>x.up&&!x.gone)&&o[0].v===o[1].v;});
+  const pool=pref.length?pref:d;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+async function botTurn(seat){
+  const p=G.players[seat], top=topDiscard();
+  let take=false;
+  if(top!==undefined){ const b=bestPlacement(p,top); take = b.i>=0 && (b.gain>=4 || (top<=3 && b.gain>=1.5)); }
+  if(take) await hEmit({t:'take',p:seat});
+  else { const {v,rs}=hostDraw(); await hEmit({t:'draw',p:seat,v,n:G.deck.length,rs}); }
+  await wait(speed*0.5);
+  await botFinishHold(seat, take);
+  await endTurn();
+}
+async function botFinishHold(seat, fromDiscard){
+  const p=G.players[seat], v=G.held;
+  if(fromDiscard){ const b=bestPlacement(p,v); const old=p.grid[b.i].v; log('tookSwap',seat,v,old); await hEmit({t:'place',p:seat,i:b.i,old}); return; }
+  const b=bestPlacement(p,v), downs=downIdx(p);
+  let target=-1;
+  if(b.i>=0 && (b.gain>=1 || downs.length===0)) target=b.i;
+  else if(downs.length===1 && risky(p, est(p))){ const u=bestPlacement(p,v,true); if(u.i>=0 && u.gain>-6) target=u.i; }
+  if(target>=0){ const old=p.grid[target].v; log('drewSwap',seat,v,old); await hEmit({t:'place',p:seat,i:target,old}); }
+  else {
+    await hEmit({t:'toss',p:seat}); await wait(120);
+    const i=chooseFlip(p); log('discardFlip',seat,v,p.grid[i].v);
+    await hEmit({t:'flip',p:seat,i,v:p.grid[i].v});
+  }
+}
+// a guest left: a bot takes the seat and carries on from wherever the turn stood
+async function seatToBot(seat){
+  if(!G || !G.seats[seat] || G.seats[seat].k!=='p') return;
+  log('seatBot', seat);
+  await hEmit({t:'seat',p:seat});
+  const p=G.players[seat];
+  if(G.phase==='initialFlip'){ await botInitialFlips(seat); await checkAllFlipped(); return; }
+  if(G.current!==seat) return;
+  if(G.phase==='choose') await botTurn(seat);
+  else if(G.phase==='holdDeck'||G.phase==='holdDiscard'){ await botFinishHold(seat, G.phase==='holdDiscard'); await endTurn(); }
+  else if(G.phase==='flip'){ const i=chooseFlip(p); log('discardFlip',seat,G.lastToss,p.grid[i].v); await hEmit({t:'flip',p:seat,i,v:p.grid[i].v}); await endTurn(); }
+}
+
+
+/* ---------- direct browser-to-browser rooms (PeerJS / WebRTC) ----------
+   Exposes the same small interface the game already uses for rooms:
+   presence(patch), peers(), onPeers(fn), leave().
+   The host registers as "luma-<code>"; guests connect straight to it. */
+function makePeerNet(){
+  if(typeof window.Peer!=='function') return null;
+  const OPTS={debug:0, config:{iceServers:[
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'stun:stun.cloudflare.com:3478'}
+  ]}};
+  const HB=3000, TIMEOUT=15000;
+  function hub(){
+    const st={me:null, mine:{}, others:new Map(), subs:new Set(), pend:{joined:[],left:[],updated:[]}, t:null, snap:[], dirty:true};
+    st.list=()=>{
+      if(!st.dirty) return st.snap;
+      const a=[{peer:st.me,isMe:true,sameTab:true,kind:'viewer',presence:st.mine}];
+      st.others.forEach((v,k)=>a.push({peer:k,isMe:false,sameTab:false,kind:'viewer',presence:v}));
+      st.snap=a; st.dirty=false; return a;
+    };
+    st.notify=(kind,id)=>{
+      st.dirty=true; st.pend[kind].push(id);
+      if(st.t) return;
+      st.t=setTimeout(()=>{
+        st.t=null; const all=st.list(); const pick=ids=>all.filter(p=>ids.includes(p.peer));
+        const ch={peers:all, joined:pick(st.pend.joined), left:st.pend.left.map(id=>({peer:id,isMe:false,sameTab:false,presence:{}})), updated:pick(st.pend.updated)};
+        st.pend={joined:[],left:[],updated:[]};
+        st.subs.forEach(f=>{ try{ f(ch); }catch(e){ console.error(e); } });
+      },16);
+    };
+    st.merge=p=>{ const m={...st.mine,...p}; Object.keys(p).forEach(k=>{ if(p[k]===null) delete m[k]; }); st.mine=m; st.dirty=true; };
+    st.onPeers=fn=>{ st.subs.add(fn); setTimeout(()=>{ const a=st.list(); fn({peers:a,joined:a,left:[],updated:[]}); },0); return ()=>st.subs.delete(fn); };
+    return st;
+  }
+  const isObj=x=>x && typeof x==='object' && !Array.isArray(x);
+
+  return {
+    // create a room: resolves once this browser is reachable under the room's name
+    host(code){
+      return new Promise((resolve,reject)=>{
+        const st=hub(), conns=new Map(); let sendT=null, dead=false, ready=false, hb=null;
+        const peer=new window.Peer('luma-'+code.toLowerCase(), OPTS);
+        const flush=()=>{ sendT=null; const msg={type:'p',presence:st.mine}; conns.forEach(c=>{ if(c.open) try{ c.send(msg); }catch(e){} }); };
+        const drop=id=>{ const c=conns.get(id); if(!c) return; conns.delete(id); try{ c.close(); }catch(e){} if(st.others.delete(id)) st.notify('left',id); };
+        peer.on('open',id=>{
+          ready=true; st.me=id; st.dirty=true;
+          hb=setInterval(()=>{ const now=Date.now(); conns.forEach((c,cid)=>{ if(now-c._last>TIMEOUT) drop(cid); else if(c.open) try{ c.send({type:'hb'}); }catch(e){} }); },HB);
+          resolve({
+            presence(p){ st.merge(p); if(!sendT) sendT=setTimeout(flush,30); return Promise.resolve(); },
+            peers:()=>st.list(),
+            onPeers:fn=>st.onPeers(fn),
+            leave(){ dead=true; clearInterval(hb); conns.forEach(c=>{ try{ c.close(); }catch(e){} }); try{ peer.destroy(); }catch(e){} return Promise.resolve(); }
+          });
+        });
+        peer.on('connection',c=>{
+          if(conns.size>=10){ c.on('open',()=>{ try{ c.close(); }catch(e){} }); return; }
+          c._last=Date.now();
+          c.on('open',()=>{ conns.set(c.peer,c); c._last=Date.now(); try{ c.send({type:'p',presence:st.mine}); }catch(e){} });
+          c.on('data',d=>{
+            c._last=Date.now();
+            if(isObj(d) && d.type==='p' && isObj(d.presence)){
+              const ex=st.others.has(c.peer); st.others.set(c.peer,d.presence); st.notify(ex?'updated':'joined',c.peer);
+            }
+          });
+          c.on('close',()=>drop(c.peer)); c.on('error',()=>drop(c.peer));
+        });
+        peer.on('error',e=>{ if(!ready){ try{ peer.destroy(); }catch(_){} reject(e); } });
+        peer.on('disconnected',()=>{ if(!dead) try{ peer.reconnect(); }catch(e){} });
+      });
+    },
+    // join a room: resolves once the direct link to the host is open
+    connect(code){
+      return new Promise((resolve,reject)=>{
+        const st=hub(), hostId='luma-'+code.toLowerCase();
+        let conn=null, done=false, sendT=null, dead=false, hb=null;
+        const peer=new window.Peer(OPTS);
+        const fail=e=>{ if(done) return; done=true; clearTimeout(timer); try{ peer.destroy(); }catch(_){} reject(e); };
+        const timer=setTimeout(()=>fail({type:'timeout'}),TIMEOUT);
+        const hostGone=()=>{ if(dead) return; clearInterval(hb); if(st.others.delete(hostId)) st.notify('left',hostId); };
+        const api={
+          presence(p){ st.merge(p); if(!sendT) sendT=setTimeout(()=>{ sendT=null; if(conn&&conn.open) try{ conn.send({type:'p',presence:st.mine}); }catch(e){} },30); return Promise.resolve(); },
+          peers:()=>st.list(),
+          onPeers:fn=>st.onPeers(fn),
+          leave(){ dead=true; clearInterval(hb); try{ conn&&conn.close(); }catch(e){} try{ peer.destroy(); }catch(e){} return Promise.resolve(); }
+        };
+        peer.on('error',e=>{ if(!done) fail(e); });
+        peer.on('open',id=>{
+          st.me=id; st.dirty=true;
+          conn=peer.connect(hostId,{reliable:true, serialization:'json'});
+          conn.on('open',()=>{
+            if(done) return; done=true; clearTimeout(timer);
+            conn._last=Date.now();
+            try{ conn.send({type:'p',presence:st.mine}); }catch(e){}
+            hb=setInterval(()=>{ if(Date.now()-conn._last>TIMEOUT){ try{ conn.close(); }catch(e){} hostGone(); } else if(conn.open) try{ conn.send({type:'hb'}); }catch(e){} },HB);
+            resolve(api);
+          });
+          conn.on('data',d=>{
+            conn._last=Date.now();
+            if(isObj(d) && d.type==='p' && isObj(d.presence)){
+              const ex=st.others.has(hostId); st.others.set(hostId,d.presence); st.notify(ex?'updated':'joined',hostId);
+            }
+          });
+          conn.on('close',hostGone); conn.on('error',hostGone);
+        });
+        peer.on('disconnected',()=>{ if(!dead && done) try{ peer.reconnect(); }catch(e){} });
+      });
+    }
+  };
+}
+
+/* ---------- networking ---------- */
+function initRoom(){
+  try{
+    net.roomP = Promise.resolve(makePeerNet());
+  }catch(e){ net.roomP=Promise.resolve(null); }
+  net.roomP.then(r=>{ if(!r){ $('#hostBtn').disabled=true; $('#joinBtn').disabled=true; homeNote('onlineUnavailable'); } });
+}
+function homeNote(k, ok){ const n=$('#homeNote'); n.dataset.k=k||''; n.className='note'+(ok?' ok':''); n.textContent=k?L()[k]:''; }
+function readName(){ myName=cleanName($('#nameIn').value)||L().you; try{ localStorage.setItem('luma-name',myName); }catch(e){} }
+function lobbyPlayers(){
+  if(!net.named) return [];
+  const ps=net.named.peers().filter(p=>!p.sameTab && p.kind==='viewer' && p.presence && p.presence.role==='player');
+  return ps.sort((a,b)=>net.order.indexOf(a.peer)-net.order.indexOf(b.peer));
+}
+function leaveRoom(){
+  if(net.named){ try{ net.named.leave().catch(()=>{}); }catch(e){} }
+  net.named=null; net.code=null; net.hostPeer=null; net.latest=null; net.queue=[]; net.pending=false;
+  clearTimeout(net.joinTimer); MODE='solo';
+}
+
+async function createRoom(){
+  readName(); homeNote('connecting', true);
+  const room=await net.roomP; if(!room){ homeNote('onlineUnavailable'); return; }
+  let named=null, code='';
+  for(let tries=0; tries<4 && !named; tries++){
+    code=Array.from({length:6},()=>String.fromCharCode(65+Math.floor(Math.random()*26))).join('');
+    try{ named=await room.host(code); }
+    catch(e){ if(!(e && e.type==='unavailable-id')){ homeNote('onlineUnavailable'); return; } }
+  }
+  if(!named){ homeNote('onlineUnavailable'); return; }
+  leaveRoom();
+  net.named=named; net.code=code; net.order=[]; net.seen={}; MODE='host'; G=null; mySeat=0;
+  named.onPeers(onHostPeers, ()=>{});
+  hostPresence(); homeNote(null);
+  show('lobby'); renderLobby();
+}
+function onHostPeers(ch){
+  ch.joined.forEach(p=>{ if(!p.sameTab && !net.order.includes(p.peer)) net.order.push(p.peer); });
+  ch.left.forEach(p=>{
+    if(G){ const seat=G.seats.findIndex(s=>s.k==='p' && s.peer===p.peer); if(seat>=0) enqueue(()=>seatToBot(seat)); }
+  });
+  if(G){
+    ch.peers.forEach(p=>{
+      if(p.sameTab || !p.presence || p.presence.role!=='player') return;
+      const r=p.presence.req; if(!r || typeof r.s!=='number') return;
+      if(r.s <= (net.seen[p.peer]||0)) return;
+      net.seen[p.peer]=r.s;
+      const seat=G.seats.findIndex(s=>s.k==='p' && s.peer===p.peer);
+      if(seat<0) return;
+      const a=String(r.a), i=(typeof r.i==='number')?r.i:null;
+      if(!['deck','discard','slot'].includes(a)) return;
+      enqueue(()=>act(seat,a,i));
+    });
+    if(ch.joined.length) publish();
+  } else { hostPresence(); renderLobby(); }
+}
+function startOnline(){
+  const players=lobbyPlayers();
+  const humans=Math.min(players.length,3);
+  const bots=Math.min(lobbyBots, 3-humans);
+  if(1+humans+bots<2){ $('#lobbyNote').textContent=L().needPlayers; return; }
+  const seats=[{n:myName,k:'h'}];
+  players.slice(0,humans).forEach(p=>seats.push({n:cleanName(p.presence.n)||'?',k:'p',peer:p.peer}));
+  for(let j=0;j<bots;j++) seats.push({n:NAMES[j],k:'b'});
+  players.forEach(p=>{ net.seen[p.peer]=(p.presence.req&&typeof p.presence.req.s==='number')?p.presence.req.s:0; });
+  mySeat=0;
+  newHostGame(seats);
+}
+
+async function joinRoom(){
+  readName();
+  const code=$('#codeIn').value.toUpperCase().replace(/[^A-Z]/g,'');
+  if(!/^[A-Z]{6}$/.test(code)){ homeNote('badCode'); return; }
+  homeNote('connecting', true);
+  const room=await net.roomP; if(!room){ homeNote('onlineUnavailable'); return; }
+  let named;
+  try{ named=await room.connect(code); }
+  catch(e){ homeNote((e && (e.type==='peer-unavailable'||e.type==='timeout'))?'roomNotFound':'onlineUnavailable'); return; }
+  leaveRoom();
+  net.named=named; net.code=code; MODE='client'; G=null; mySeat=-1; net.reqSeq=0; net.lastApplied=0; net.lastQueued=0;
+  named.presence({role:'player', n:myName}).catch(()=>{});
+  named.onPeers(onClientPeers, ()=>{});
+  homeNote(null); show('lobby'); renderLobby();
+  net.joinTimer=setTimeout(()=>{ if(MODE==='client' && !net.hostPeer){ leaveRoom(); show('home'); homeNote('roomNotFound'); } }, 15000);
+}
+function findHost(){
+  if(!net.named) return null;
+  return net.named.peers().find(p=>!p.sameTab && p.presence && p.presence.role==='host' && p.presence.code===net.code) || null;
+}
+function onClientPeers(){
+  const me=net.named && net.named.peers().find(p=>p.isMe && p.sameTab); if(me) net.me=me.peer;
+  const h=findHost();
+  if(!h){
+    if(net.hostPeer){ leaveRoom(); G=null; stopFinale(); closeModal(); $('#fx').innerHTML=''; show('home'); homeNote('hostLeft'); }
+    return;
+  }
+  net.hostPeer=h.peer; clearTimeout(net.joinTimer);
+  const st=h.presence.st;
+  if(st && st.snap && Array.isArray(st.seats)) handleState(st);
+  else renderLobby();
+}
+function handleState(st){
+  net.latest=st;
+  speed=Number(st.sp)||speed;
+  if(!G || G.gid!==st.gid){ initMirror(st); return; }
+  syncSeats(st);
+  const fresh=(Array.isArray(st.moves)?st.moves:[]).filter(m=>m && typeof m.id==='number' && m.id>net.lastQueued).sort((a,b)=>a.id-b.id);
+  if(fresh.length && fresh[0].id>net.lastQueued+1){
+    // we missed moves (trimmed from the window): jump straight to the host's snapshot
+    net.queue=[]; net.lastQueued=net.lastApplied=st.snap.mid;
+    if(!net.pumping) applySnap(st.snap);
+    return;
+  }
+  fresh.forEach(m=>{ net.queue.push(m); net.lastQueued=m.id; });
+  pump();
+}
+function syncSeats(st){
+  G.seats=st.seats.map(s=>({n:cleanName(s.n),k:['h','p','b'].includes(s.k)?s.k:'b',peer:s.p||null}));
+  mySeat=G.seats.findIndex(s=>s.peer && s.peer===net.me);
+}
+function initMirror(st){
+  G=newState(); G.gid=st.gid; syncSeats(st);
+  G.players=G.seats.map(()=>({total:0,grid:[]}));
+  net.queue=[]; net.lastApplied=net.lastQueued=st.snap.mid; net.pending=false;
+  closeModal(); stopFinale(); show('game'); applySnap(st.snap);
+}
+async function pump(){
+  if(net.pumping) return; net.pumping=true;
+  try{
+    while(net.queue.length && G){
+      const m=net.queue.shift();
+      try{ await applyMove(m); }catch(e){ console.error(e); }
+      net.lastApplied=Math.max(net.lastApplied,m.id); net.pending=false; clearTimeout(net.pendT);
+    }
+  } finally { net.pumping=false; }
+  const st=net.latest;
+  if(G && st && st.gid===G.gid && st.snap.mid===net.lastApplied) applySnap(st.snap);
+}
+function applySnap(s){
+  const num=x=>{ const n=Number(x); return Number.isFinite(n)?n:0; };
+  G.round=num(s.r); G.phase=String(s.ph); G.current=num(s.c); G.ender=(s.e===null||s.e===undefined)?null:num(s.e);
+  G.deckN=num(s.dn); G.discard=(Array.isArray(s.d)?s.d:[]).map(num); G.held=(s.h===null||s.h===undefined)?null:num(s.h);
+  (s.g||[]).forEach((str,pi)=>{
+    if(!G.players[pi]) G.players[pi]={total:0,grid:[]};
+    G.players[pi].grid=String(str).split(',').slice(0,12).map(x=>x==='x'?{v:null,up:false,gone:true}:x==='?'?{v:null,up:false,gone:false}:{v:num(x),up:true,gone:false});
+  });
+  (s.tot||[]).forEach((t,pi)=>{ if(G.players[pi]) G.players[pi].total=num(t); });
+  G.log=(Array.isArray(s.lg)?s.lg:[]).map(a=>({k:String(a[0]),pi:(a[1]===null||a[1]===undefined)?null:num(a[1]),a:a.slice(2).map(x=>typeof x==='boolean'?x:num(x))}));
+  G.hide.clear(); G.hideDiscard=0;
+  render();
+}
+function sendReq(a,i){
+  if(!net.named) return;
+  net.reqSeq++; net.pending=true; render();
+  net.named.presence({role:'player', n:myName, req:{s:net.reqSeq, a, i:(i===undefined?null:i)}}).catch(()=>{});
+  clearTimeout(net.pendT); net.pendT=setTimeout(()=>{ net.pending=false; render(); }, 4000);
+}
+
+/* ---------- local input ---------- */
+function flashNote(k){ if(!G) return; G.note=k; renderMsg(); setTimeout(()=>{ if(G&&G.note===k){ G.note=null; renderMsg(); } }, 2600); }
+function localAct(a,i){
+  if(!G || busy() || mySeat<0) return;
+  if(a==='discard' && G.phase==='holdDeck' && G.current===mySeat && !downIdx(G.players[mySeat]).length){ flashNote('mustSwap'); return; }
+  if(MODE==='client') sendReq(a,i);
+  else enqueue(()=>act(mySeat,a,i));
+}
+
+/* ---------- screens & setup ---------- */
+function show(id){ ['home','setup','lobby','game'].forEach(s=>{ $('#'+s).hidden = s!==id; }); }
+document.querySelectorAll('#botChoices .choice').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#botChoices .choice').forEach(x=>x.classList.remove('on')); b.classList.add('on'); nBots=+b.dataset.n; });
+document.querySelectorAll('#lobbyBots .choice').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#lobbyBots .choice').forEach(x=>x.classList.remove('on')); b.classList.add('on'); lobbyBots=+b.dataset.b; renderLobby(); });
+document.querySelectorAll('.speedChoices .choice').forEach(b=>b.onclick=()=>{
+  speed=+b.dataset.s;
+  document.querySelectorAll('.speedChoices .choice').forEach(x=>x.classList.toggle('on', +x.dataset.s===speed)); });
+$('#nameIn').value=myName;
+$('#codeIn').addEventListener('input',e=>{ e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,6); });
+$('#codeIn').addEventListener('keydown',e=>{ if(e.key==='Enter') joinRoom(); });
+$('#soloBtn').onclick=()=>{ readName(); homeNote(null); show('setup'); };
+$('#setupBack').onclick=()=>show('home');
+$('#startBtn').onclick=()=>{
+  leaveRoom(); MODE='solo'; mySeat=0;
+  const seats=[{n:myName,k:'h'}]; for(let j=0;j<nBots;j++) seats.push({n:NAMES[j],k:'b'});
+  newHostGame(seats);
+};
+$('#hostBtn').onclick=createRoom;
+$('#joinBtn').onclick=joinRoom;
+$('#startOnlineBtn').onclick=startOnline;
+$('#leaveBtn').onclick=goHome;
+const roomLink=()=>location.origin+location.pathname+'#'+(net.code||'');
+$('#copyLinkBtn').onclick=()=>{
+  try{ navigator.clipboard.writeText(roomLink()).then(()=>{ $('#copyLinkBtn').textContent=L().copied; setTimeout(()=>{ $('#copyLinkBtn').textContent=L().copyLink; },1500); }).catch(()=>{}); }catch(e){}
+};
+(function prefillFromLink(){ const h=(location.hash||'').replace('#','').toUpperCase(); if(/^[A-Z]{6}$/.test(h)) $('#codeIn').value=h; })();
+$('#copyBtn').onclick=()=>{
+  try{ navigator.clipboard.writeText(net.code||'').then(()=>{ $('#copyBtn').textContent=L().copied; setTimeout(()=>{ $('#copyBtn').textContent=L().copy; },1500); }).catch(()=>{}); }catch(e){}
+};
+$('#newBtn').onclick=goHome;
+$('#rulesBtn').onclick=showRules;
+function goHome(){ stopFinale(); closeModal(); leaveRoom(); G=null; $('#fx').innerHTML=''; mySeat=0; show('home'); }
+
+function renderLobby(){
+  const T=L();
+  $('#lobbyCode').textContent=net.code||'';
+  const list=$('#lobbyList'); list.innerHTML='';
+  const add=(name,tag)=>{ const li=document.createElement('li'); const s=document.createElement('span'); s.textContent=name; li.appendChild(s);
+    if(tag){ const t=document.createElement('small'); t.textContent=tag; li.appendChild(t); } list.appendChild(li); };
+  const host=MODE==='host';
+  $('#hostCtl').hidden=!host;
+  $('#lobbyNote').textContent='';
+  if(host){
+    add(myName, `${T.hostTag} · ${T.youTag}`);
+    const ps=lobbyPlayers(); ps.forEach(p=>add(cleanName(p.presence.n)||'?',''));
+    const humans=1+ps.length;
+    const extra=Math.max(0, humans-4);
+    $('#lobbyBots').querySelectorAll('.choice').forEach(b=>{ b.disabled = +b.dataset.b > Math.max(0,4-humans); });
+    const bots=Math.min(lobbyBots, Math.max(0,4-Math.min(humans,4)));
+    $('#startOnlineBtn').disabled = Math.min(humans,4)+bots<2;
+    $('#lobbyWait').textContent = extra? T.tooMany(extra) : (Math.min(humans,4)+bots<2 ? T.needPlayers : '');
+  } else {
+    const h=findHost();
+    if(h){ add(cleanName(h.presence.n)||'?', T.hostTag); (Array.isArray(h.presence.lobby)?h.presence.lobby:[]).forEach(n=>add(cleanName(n)||'?', cleanName(n)===myName?T.youTag:'')); }
+    $('#lobbyWait').textContent = h ? T.waitingHost : T.connecting;
+  }
+}
+
+/* ---------- i18n wiring ---------- */
+function applyStatic(){
+  document.documentElement.lang=L().htmlLang; document.title=L().title;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=L()[el.dataset.i18n]; });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder=L()[el.dataset.i18nPh]; });
+  $('#langSel').value=lang;
+  const hn=$('#homeNote'); if(hn.dataset.k) hn.textContent=L()[hn.dataset.k]||'';
+}
+$('#langSel').onchange=e=>{
+  lang=e.target.value; try{ localStorage.setItem('doze-lang',lang); }catch(err){}
+  applyStatic(); render(); if(!$('#lobby').hidden) renderLobby();
+  if(!$('#modal').hidden && currentModal) currentModal();
+  if($('#finale').classList.contains('on')) finaleText();
+};
+
+/* ---------- end of round / game ---------- */
+function showEnd(){
+  const r=G.result;
+  if(r.over && mySeat>=0){ const min=Math.min(...G.players.map(p=>p.total)); showFinale(G.players[mySeat].total===min, showResult); }
+  else showResult();
+}
+function showResult(){
+  if(!G||!G.result) return;
+  const T=L(), {raw,pts,e,doubled,over}=G.result;
+  const rows=G.players.map((p,i)=>`<tr><td>${nm(i)}${i===e?(doubled?` <span class="tag">${T.closedDoubled}</span>`:` <span class="tag ok">${T.closed}</span>`):''}</td><td class="num">${Number(raw[i])}</td><td class="num">${pts[i]>0?'+':''}${Number(pts[i])}</td><td class="num"><b>${p.total}</b></td></tr>`).join('');
+  let html=`<h2>${over?T.gameOver:T.roundOver(G.round)}</h2>
+    <table><tr><th>${T.player}</th><th class="num">${T.cards}</th><th class="num">${T.roundCol}</th><th class="num">${T.total}</th></tr>${rows}</table>`;
+  if(over){
+    const min=Math.min(...G.players.map(p=>p.total));
+    const win=G.players.map((p,i)=>p.total===min?i:-1).filter(i=>i>=0);
+    const youWin=win.includes(mySeat);
+    html+=`<p style="font-size:19px">${youWin?(win.length>1?T.tieWin:T.youWin):T.winOf(win.map(nm).join(T.and), win.length>1)}</p>`;
+  }
+  const hostBtn = MODE==='client' ? `<span style="color:var(--muted);align-self:center">${T.waitHostNext}</span>`
+    : `<button class="btn primary" id="mGo">${over?T.playAgain:T.nextRound}</button>`;
+  html+=`<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button class="btn" id="mLook">${T.viewTable}</button>${hostBtn}</div>`;
+  openModal(html, showResult);
+  $('#mLook').onclick=()=>{ closeModal(); G.showBtn=true; renderMsg(); };
+  const go=$('#mGo'); if(go) go.onclick=()=>{ over?hostPlayAgain():hostNextRound(); };
+}
+
+/* ---------- modal ---------- */
+function openModal(html, builder){ $('#modalBox').innerHTML=html; delete $('#modalBox').dataset.rules; $('#modal').hidden=false; currentModal=builder||null; }
+function closeModal(){ $('#modal').hidden=true; currentModal=null; }
+$('#modal').addEventListener('click',e=>{ if(e.target.id==='modal' && $('#modalBox').dataset.rules) closeModal(); });
+function showRules(){
+  const T=L();
+  openModal(`<h2>${T.howToPlay}</h2><ul>${T.rulesList.map(r=>`<li>${r}</li>`).join('')}</ul>
+    <div style="text-align:right"><button class="btn primary" id="mClose">${T.gotIt}</button></div>`, showRules);
+  $('#modalBox').dataset.rules='1';
+  $('#mClose').onclick=closeModal;
+}
+
+/* ---------- render ---------- */
+function msgFor(){
+  const T=L(), ph=G.phase, me=mySeat>=0 && G.current===mySeat, n=nm(G.current);
+  switch(ph){
+    case 'deal': return T.dealing;
+    case 'initialFlip': { if(mySeat<0) return T.spectating; const up=G.players[mySeat].grid.filter(c=>c.up).length; return up===0?T.flip2:up===1?T.flip1:T.waitOthers; }
+    case 'choose': return me?(G.ender!==null?T.lastTurn:T.yourTurn):T.botTurn(n);
+    case 'holdDeck': return me?T.drew(G.held):T.botDraws(n);
+    case 'holdDiscard': return me?T.took(G.held):T.botTakes(n,false,G.held);
+    case 'flip': return me?T.flipNow:T.playerFlip(n);
+    case 'wait': return (G.current>=0 && !me)?T.botTurn(n):'';
+    case 'over': return G.result?'':T.revealing;
+  }
+  return '';
+}
+function renderMsg(){
+  const m=$('#msg'); m.innerHTML='';
+  if(!G) return;
+  if(G.showBtn && G.result){
+    if(MODE==='client'){ m.textContent=L().waitHostNext; return; }
+    const b=document.createElement('button'); b.className='btn primary';
+    b.textContent=G.result.over?L().playAgain:L().nextRound;
+    b.onclick=()=>{ G.result.over?hostPlayAgain():hostNextRound(); };
+    m.appendChild(b); return;
+  }
+  if(G.note){ m.textContent=L()[G.note]||''; return; }
+  m.textContent=msgFor();
+}
+function cardEl(c, opts={}){
+  const d=document.createElement('div');
+  if(opts.key) d.dataset.key=opts.key;
+  if(c===null||c===undefined){ d.className='slot-empty'; return d; }
+  if(opts.ghost){ d.className='card ghost'; return d; }
+  if(typeof c==='number'){ d.className='card '+cls(c); d.textContent=c; }
+  else if(c.gone){ d.className='card gone'; return d; }
+  else if(!c.up){ d.className='card back'; }
+  else { d.className='card '+cls(c.v); d.textContent=c.v; }
+  if(opts.pick) d.classList.add('pick');
+  return d;
+}
+function gridEl(p,pi){
+  const g=document.createElement('div'); g.className='grid';
+  const mine=pi===mySeat, idle=!busy(), myTurn=mine && G.current===mySeat;
+  const ups=p.grid.filter(c=>c.up).length;
+  p.grid.forEach((c,i)=>{
+    const key=slotKey(pi,i);
+    let pick=false;
+    if(mine && idle && !c.gone){
+      if(G.phase==='initialFlip' && !c.up && ups<2) pick=true;
+      if(myTurn && (G.phase==='holdDeck'||G.phase==='holdDiscard')) pick=true;
+      if(myTurn && G.phase==='flip' && !c.up) pick=true;
+    }
+    const el=cardEl(c,{pick,key,ghost:G.hide.has(key)});
+    if(mine) el.onclick=()=>localAct('slot',i);
+    g.appendChild(el);
+  });
+  return g;
+}
+const ACTIVE=['choose','holdDeck','holdDiscard','flip','wait'];
+function seatLabel(i){
+  const s=G.seats[i]; let t=nm(i);
+  if(MODE!=='solo' && s && s.k==='b') t+=' 🤖';
+  if(G.ender===i) t+=' 🏁';
+  return t;
+}
+function render(){
+  if(!G) return;
+  const T=L(), idle=!busy(), myTurn=mySeat>=0 && G.current===mySeat;
+  const opps=$('#opps'); opps.innerHTML='';
+  G.players.forEach((p,i)=>{
+    if(i===mySeat) return;
+    const box=document.createElement('div'); box.className='opp'+(G.current===i&&ACTIVE.includes(G.phase)?' turn':'');
+    const head=document.createElement('div'); head.className='pname';
+    const nmEl=document.createElement('span'); nmEl.textContent=seatLabel(i);
+    const sm=document.createElement('small'); sm.textContent=`${T.visible}: ${visibleSum(p)}`;
+    head.append(nmEl, sm); box.appendChild(head);
+    box.appendChild(gridEl(p,i)); opps.appendChild(box);
+  });
+  const mine=$('#mine');
+  if(mySeat>=0 && G.players[mySeat]){
+    const me=G.players[mySeat];
+    mine.hidden=false;
+    mine.className='mine'+(myTurn&&ACTIVE.includes(G.phase)?' turn':'');
+    mine.innerHTML='';
+    const head=document.createElement('div'); head.className='pname';
+    const nmEl=document.createElement('span'); nmEl.textContent=seatLabel(mySeat);
+    const sm=document.createElement('small'); sm.textContent=`${T.visible}: ${visibleSum(me)}`;
+    head.append(nmEl, sm); mine.appendChild(head);
+    mine.appendChild(gridEl(me,mySeat));
+  } else mine.hidden=true;
+
+  const deck=$('#deck'); deck.innerHTML='';
+  const dk=cardEl({up:false},{key:'deck'}); if(idle&&myTurn&&G.phase==='choose') dk.classList.add('pick');
+  dk.onclick=()=>localAct('deck'); deck.appendChild(dk);
+  $('#deckCount').textContent=`(${G.deckN})`;
+
+  const dis=$('#discard'); dis.innerHTML='';
+  const t=G.discard[G.discard.length-1-G.hideDiscard];
+  const de=cardEl(t===undefined?null:t,{key:'discard'});
+  if(idle&&myTurn&&(G.phase==='holdDeck'||G.phase==='holdDiscard'||(G.phase==='choose'&&G.discard.length))) de.classList.add('pick');
+  de.onclick=()=>localAct('discard'); dis.appendChild(de);
+
+  const held=$('#held'); held.innerHTML='';
+  held.appendChild(cardEl((G.held==null||G.hide.has('held'))?null:G.held,{key:'held'}));
+  $('#heldLabel').textContent = G.held==null||G.current<0 ? T.inHand : (myTurn?T.inYourHand:T.inHandOf(nm(G.current)));
+
+  $('#roundNo').textContent=G.round;
+  const rt=$('#roomTag');
+  if(MODE!=='solo' && net.code){ rt.hidden=false; rt.textContent=`${T.roomLabel}: ${net.code}`; } else rt.hidden=true;
+  const max=Math.max(LIMIT,...G.players.map(p=>p.total));
+  const sc=$('#scores'); sc.innerHTML='';
+  G.players.forEach((p,i)=>{
+    const row=document.createElement('div'); row.className='srow';
+    const a=document.createElement('span'); a.textContent=nm(i);
+    const b=document.createElement('span'); b.className='tot'; b.textContent=p.total;
+    row.append(a,b); sc.appendChild(row);
+    const bar=document.createElement('div'); bar.className='bar'; const fill=document.createElement('i'); fill.style.width=(Math.max(0,p.total)/max*100)+'%'; bar.appendChild(fill); sc.appendChild(bar);
+  });
+  const lg=$('#log'); lg.innerHTML='';
+  G.log.forEach(e=>{ const d=document.createElement('div'); d.textContent=tr(e); lg.appendChild(d); });
+  renderMsg();
+}
+
+/* ---------- end-of-game finale ---------- */
+let finRaf=null, finWin=false;
+function stopFinale(){
+  if(finRaf) cancelAnimationFrame(finRaf); finRaf=null;
+  const f=$('#finale'); f.className=''; $('#hand').classList.remove('go');
+}
+function finaleText(){
+  const T=L();
+  $('#neonSign').textContent = finWin ? T.winnerSign : T.loserSign;
+  $('#finaleBtn').textContent = T.seeScores;
+}
+function showFinale(win, onDone){
+  finWin=win;
+  const f=$('#finale');
+  f.className='on '+(win?'win':'lose');
+  const sign=$('#neonSign'); sign.className='neon '+(win?'blue':'red');
+  void sign.offsetWidth;
+  finaleText();
+  const hand=$('#hand'); hand.classList.remove('go');
+  if(!win){ void hand.offsetWidth; hand.classList.add('go'); }
+  $('#finaleBtn').onclick=()=>{ stopFinale(); onDone&&onDone(); };
+  runCanvas(win);
+}
+function runCanvas(win){
+  const cv=$('#finCanvas'), ctx=cv.getContext('2d');
+  const P=Math.PI;
+  const resize=()=>{ const d=window.devicePixelRatio||1; cv.width=innerWidth*d; cv.height=innerHeight*d; };
+  resize(); window.onresize=resize;
+  const HUES=[195,285,330,50,160,220];
+  const tiles=[]; const BANDS=16;
+  for(let b=0;b<BANDS;b++){
+    const la0=-P/2+b*P/BANDS, la1=la0+P/BANDS, lm=(la0+la1)/2;
+    const n=Math.max(6, Math.round(34*Math.cos(lm)));
+    for(let j=0;j<n;j++) tiles.push({la0,la1,lm,l0:j*2*P/n,l1:(j+1)*2*P/n,ph:Math.random()*50,ph2:Math.random()*50,hue:HUES[(Math.random()*HUES.length)|0]});
+  }
+  const spots=Array.from({length:80},()=>({a:Math.random()*2*P,y:Math.random(),r:5+Math.random()*13,hue:HUES[(Math.random()*HUES.length)|0],sp:0.7+Math.random()*0.6}));
+  const drops=Array.from({length:120},()=>({x:Math.random(),y:Math.random(),v:0.25+Math.random()*0.35,l:10+Math.random()*18}));
+  const t0=performance.now();
+  const Ld=(()=>{const v=[-0.45,0.55,0.7];const m=Math.hypot(...v);return v.map(x=>x/m);})();
+  function frame(now){
+    const t=(now-t0)/1000, d=window.devicePixelRatio||1, W=cv.width/d, H=cv.height/d;
+    ctx.setTransform(d,0,0,d,0,0);
+    ctx.globalCompositeOperation='source-over';
+    if(!win){
+      ctx.fillStyle='#07080d'; ctx.fillRect(0,0,W,H);
+      const g=ctx.createRadialGradient(W/2,H*0.55,10,W/2,H*0.55,Math.max(W,H)*0.55);
+      g.addColorStop(0,'rgba(120,130,160,0.28)'); g.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle='rgba(170,180,210,0.22)'; ctx.lineWidth=1.2;
+      ctx.beginPath();
+      for(const r of drops){ r.y+=r.v*0.016; if(r.y>1.05){r.y=-0.05;r.x=Math.random();} const x=r.x*W,y=r.y*H; ctx.moveTo(x,y); ctx.lineTo(x-2,y+r.l); }
+      ctx.stroke();
+      finRaf=requestAnimationFrame(frame); return;
+    }
+    ctx.fillStyle='#06040f'; ctx.fillRect(0,0,W,H);
+    const R=Math.min(W,H)*0.15, cx=W/2, target=H*0.52;
+    const p=Math.min(1,t/2.6);
+    const e=p<1 ? 1-Math.pow(1-p,3)*Math.cos(p*P*1.5) : 1;
+    const cy=-R-30+(target+R+30)*Math.min(1.04,e);
+    const sway=Math.sin(t*1.3)*R*0.03*Math.min(1,t/3);
+    const bx=cx+sway;
+    const rot=t*0.85;
+    const lights=Math.max(0,Math.min(1,(t-2.3)/0.9));
+    if(lights>0){
+      ctx.globalCompositeOperation='lighter';
+      const Lb=Math.hypot(W,H);
+      for(let k=0;k<12;k++){
+        const a=rot*0.7+k*2*P/12, w=0.035, hue=HUES[k%HUES.length];
+        const gr=ctx.createRadialGradient(bx,cy,R*0.6,bx,cy,Lb);
+        gr.addColorStop(0,`hsla(${hue},100%,70%,${0.22*lights})`); gr.addColorStop(1,`hsla(${hue},100%,60%,0)`);
+        ctx.fillStyle=gr; ctx.beginPath(); ctx.moveTo(bx,cy);
+        ctx.lineTo(bx+Math.cos(a-w)*Lb, cy+Math.sin(a-w)*Lb); ctx.lineTo(bx+Math.cos(a+w)*Lb, cy+Math.sin(a+w)*Lb); ctx.closePath(); ctx.fill();
+      }
+      for(const s of spots){
+        const ang=s.a+rot*s.sp;
+        const x=(((ang/(2*P))%1)+1)%1*W*1.3-W*0.15, y=s.y*H;
+        const gr=ctx.createRadialGradient(x,y,0,x,y,s.r*2.2);
+        gr.addColorStop(0,`hsla(${s.hue},100%,85%,${0.9*lights})`); gr.addColorStop(0.4,`hsla(${s.hue},100%,65%,${0.45*lights})`); gr.addColorStop(1,`hsla(${s.hue},100%,60%,0)`);
+        ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,s.r*2.2,0,2*P); ctx.fill();
+      }
+      ctx.globalCompositeOperation='source-over';
+    }
+    ctx.strokeStyle='#b8bcc8'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(bx,cy-R); ctx.stroke();
+    ctx.fillStyle='#8d92a3'; ctx.fillRect(bx-R*0.09,cy-R-R*0.12,R*0.18,R*0.16);
+    ctx.fillStyle='#1d1f29'; ctx.beginPath(); ctx.arc(bx,cy,R,0,2*P); ctx.fill();
+    const sparks=[];
+    const pt=(la,lo)=>[bx+R*Math.cos(la)*Math.sin(lo), cy-R*Math.sin(la)];
+    const ins=0.012;
+    for(const tl of tiles){
+      const lo0=tl.l0+rot+ins, lo1=tl.l1+rot-ins, mid=(lo0+lo1)/2;
+      if(Math.cos(mid)<=0.02) continue;
+      const nx=Math.cos(tl.lm)*Math.sin(mid), ny=Math.sin(tl.lm), nz=Math.cos(tl.lm)*Math.cos(mid);
+      const dif=Math.max(0,nx*Ld[0]+ny*Ld[1]+nz*Ld[2]);
+      const flash=Math.sin(t*5+tl.ph);
+      let col;
+      if(flash>0.985){ col='#ffffff'; sparks.push(pt(tl.lm,mid)); }
+      else if(lights>0 && Math.sin(t*1.7+tl.ph2)>0.86) col=`hsl(${tl.hue},90%,${55+25*dif}%)`;
+      else { const v=Math.round(55+170*dif*dif+20*nz); col=`rgb(${v},${v},${Math.min(255,v+12)})`; }
+      const a=pt(tl.la0+ins,lo0), b=pt(tl.la0+ins,lo1), c=pt(tl.la1-ins,lo1), dd=pt(tl.la1-ins,lo0);
+      ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineTo(c[0],c[1]); ctx.lineTo(dd[0],dd[1]); ctx.closePath(); ctx.fill();
+    }
+    const sh=ctx.createRadialGradient(bx-R*0.35,cy-R*0.4,R*0.05,bx,cy,R*1.02);
+    sh.addColorStop(0,'rgba(255,255,255,0.22)'); sh.addColorStop(0.55,'rgba(255,255,255,0)'); sh.addColorStop(1,'rgba(0,0,0,0.55)');
+    ctx.fillStyle=sh; ctx.beginPath(); ctx.arc(bx,cy,R,0,2*P); ctx.fill();
+    ctx.globalCompositeOperation='lighter';
+    for(const [x,y] of sparks){
+      const s=R*0.28;
+      const gr=ctx.createRadialGradient(x,y,0,x,y,s); gr.addColorStop(0,'rgba(255,255,255,.95)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=gr; ctx.beginPath(); ctx.moveTo(x-s,y); ctx.lineTo(x,y-s*0.12); ctx.lineTo(x+s,y); ctx.lineTo(x,y+s*0.12); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x,y-s); ctx.lineTo(x+s*0.12,y); ctx.lineTo(x,y+s); ctx.lineTo(x-s*0.12,y); ctx.closePath(); ctx.fill();
+    }
+    ctx.globalCompositeOperation='source-over';
+    finRaf=requestAnimationFrame(frame);
+  }
+  if(finRaf) cancelAnimationFrame(finRaf);
+  finRaf=requestAnimationFrame(frame);
+}
+
+applyStatic();
+initRoom();
+show('home');
+})();
+</script>
+</body>
+</html>
