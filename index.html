@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="LuMa — jogo de cartas online para até 4 pessoas.">
+<meta name="luma-build" content="20261115215551">
 <title>LuMa — jogo de cartas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Tilt+Neon&display=swap" rel="stylesheet">
@@ -113,7 +114,7 @@
   #finCanvas{position:absolute;inset:0;width:100%;height:100%}
   .neon{position:absolute;top:5vh;left:50%;transform:translateX(-50%);white-space:nowrap;
     padding:.12em .6em .16em;border-radius:22px;font-family:'Tilt Neon','Fredoka',sans-serif;
-    font-size:clamp(40px,9vw,104px);letter-spacing:.06em;text-transform:uppercase;
+    font-size:clamp(24px,7vw,88px);letter-spacing:.05em;max-width:calc(100vw - 24px);text-transform:uppercase;
     background:rgba(4,8,24,.82);border:4px solid var(--rim);color:var(--core);
     box-shadow:0 0 4px #fff,0 0 14px var(--n),0 0 36px var(--n),0 0 80px var(--n),inset 0 0 22px var(--n);
     text-shadow:0 0 3px #fff,0 0 10px var(--n),0 0 24px var(--n),0 0 48px var(--n),0 0 90px var(--n)}
@@ -170,6 +171,12 @@
   /* 6-7 easter egg: the player's own clip leans out from behind the card panel's border */
   .sixSeven{position:absolute;z-index:24;pointer-events:none;user-select:none}
   .sixSeven.inward{transform:scaleX(-1)}
+
+  /* "new version" notice */
+  #updBar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:35;display:flex;gap:10px;align-items:center;
+    background:#1e1a3d;border:1px solid var(--accent);border-radius:14px;padding:8px 10px 8px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+    font-size:14px;max-width:calc(100vw - 20px)}
+  #updBar small{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -293,6 +300,7 @@
   <button class="btn primary" id="finaleBtn"></button>
 </div>
 <div id="fx"></div>
+<div id="updBar" hidden><span><span data-i18n="updateReady"></span> <small data-i18n="updateLater"></small></span><button class="btn primary" id="updBtn" data-i18n="updateNow"></button></div>
 <div class="modal" id="modal" hidden><div class="box" id="modalBox"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -307,7 +315,7 @@ const an = v => ((v===8||v===11||v===18)?'an ':'a ')+v;
 const I18N = {
   pt: {
     htmlLang:'pt-BR', title:'LuMa — jogo de cartas',
-    rules:'Regras', home:'Início', welcome:'Bem-vindo à mesa',
+    updateReady:'Há uma nova versão do LuMa.', updateLater:'Ela entra sozinha quando você voltar ao início.', updateNow:'Atualizar agora', rules:'Regras', home:'Início', welcome:'Bem-vindo à mesa',
     intro:`Faça a menor pontuação possível. O jogo acaba quando alguém chega a ${LIMIT} pontos.`,
     yourName:'Seu nome', namePh:'Como quer ser chamado?',
     createRoom:'Criar sala online', orJoin:'ou entre numa sala com o código:', join:'Entrar', orSolo:'ou jogue sozinho:',
@@ -352,10 +360,10 @@ const I18N = {
     tieWin:'Empate na liderança! Você está entre os vencedores 🎉', youWin:'Você venceu! 🎉',
     winOf:(s,many)=>`Vitória de ${s}.`,
     viewTable:'Ver mesa', playAgain:'Jogar de novo', nextRound:'Próxima rodada', howToPlay:'Como jogar', gotIt:'Entendi',
-    winnerSign:'Vencedor', loserSign:'Perdedor', seeScores:'Ver placar',
+    winnerSign:'Você venceu', loserSign:'Você perdeu', seeScores:'Ver placar',
     rulesList:[
       'Cada jogador tem 12 cartas viradas para baixo, em 3 linhas e 4 colunas. As cartas vão de −2 a 12.',
-      'No início, vire 2 cartas. Quem tiver a maior soma começa (nas rodadas seguintes, começa quem fechou a anterior).',
+      'No início de cada rodada, vire 2 cartas. Quem tiver a maior soma começa.',
       'Na sua vez, <b>pegue a carta do descarte</b> e troque por uma das suas, <b>ou compre do monte</b>: aí você pode trocar, ou descartá-la e virar uma carta escondida.',
       'A carta trocada vai para o descarte, revelada.',
       'Três cartas iguais e visíveis na mesma coluna saem da mesa e não contam pontos.',
@@ -367,7 +375,7 @@ const I18N = {
   },
   en: {
     htmlLang:'en', title:'LuMa — card game',
-    rules:'Rules', home:'Home', welcome:'Welcome to the table',
+    updateReady:'A new version of LuMa is available.', updateLater:'It loads by itself when you go back home.', updateNow:'Update now', rules:'Rules', home:'Home', welcome:'Welcome to the table',
     intro:`Score as few points as possible. The game ends when someone reaches ${LIMIT} points.`,
     yourName:'Your name', namePh:'What should we call you?',
     createRoom:'Create online room', orJoin:'or join a room with its code:', join:'Join', orSolo:'or play on your own:',
@@ -412,10 +420,10 @@ const I18N = {
     tieWin:'Tied for the lead! You are among the winners 🎉', youWin:'You won! 🎉',
     winOf:(s,many)=>`${s} ${many?'win':'wins'}.`,
     viewTable:'View table', playAgain:'Play again', nextRound:'Next round', howToPlay:'How to play', gotIt:'Got it',
-    winnerSign:'Winner', loserSign:'Loser', seeScores:'See scores',
+    winnerSign:'You won', loserSign:'You lost', seeScores:'See scores',
     rulesList:[
       'Each player has 12 face-down cards in 3 rows and 4 columns. Cards range from −2 to 12.',
-      'At the start, flip 2 cards. The highest total goes first (in later rounds, whoever ended the previous round goes first).',
+      'At the start of each round, flip 2 cards. The highest total goes first.',
       'On your turn, <b>take the top discard</b> and swap it with one of your cards, <b>or draw from the deck</b>: then either swap it, or discard it and flip one face-down card.',
       'The card you replace goes face up onto the discard pile.',
       'Three matching face-up cards in the same column leave the table and score nothing.',
@@ -427,7 +435,7 @@ const I18N = {
   },
   de: {
     htmlLang:'de', title:'LuMa — Kartenspiel',
-    rules:'Regeln', home:'Start', welcome:'Willkommen am Tisch',
+    updateReady:'Eine neue Version von LuMa ist verfügbar.', updateLater:'Sie lädt automatisch, wenn du zum Start zurückkehrst.', updateNow:'Jetzt aktualisieren', rules:'Regeln', home:'Start', welcome:'Willkommen am Tisch',
     intro:`Sammle so wenige Punkte wie möglich. Das Spiel endet, sobald jemand ${LIMIT} Punkte erreicht.`,
     yourName:'Dein Name', namePh:'Wie sollen wir dich nennen?',
     createRoom:'Online-Raum erstellen', orJoin:'oder tritt einem Raum mit Code bei:', join:'Beitreten', orSolo:'oder spiel allein:',
@@ -472,10 +480,10 @@ const I18N = {
     tieWin:'Gleichstand an der Spitze! Du gehörst zu den Gewinnern 🎉', youWin:'Du hast gewonnen! 🎉',
     winOf:(s,many)=>`${s} ${many?'gewinnen':'gewinnt'}.`,
     viewTable:'Tisch ansehen', playAgain:'Nochmal spielen', nextRound:'Nächste Runde', howToPlay:'So wird gespielt', gotIt:'Verstanden',
-    winnerSign:'Gewinner', loserSign:'Verlierer', seeScores:'Punkte ansehen',
+    winnerSign:'Du hast gewonnen', loserSign:'Du hast verloren', seeScores:'Punkte ansehen',
     rulesList:[
       'Jeder hat 12 verdeckte Karten in 3 Reihen und 4 Spalten. Die Karten reichen von −2 bis 12.',
-      'Zu Beginn deckst du 2 Karten auf. Die höchste Summe beginnt (in späteren Runden beginnt, wer die vorige Runde beendet hat).',
+      'Zu Beginn jeder Runde deckst du 2 Karten auf. Die höchste Summe beginnt.',
       'In deinem Zug <b>nimmst du die oberste Karte der Ablage</b> und tauschst sie gegen eine deiner Karten, <b>oder du ziehst vom Stapel</b>: Dann tauschst du sie, oder du wirfst sie ab und deckst eine verdeckte Karte auf.',
       'Die ersetzte Karte kommt offen auf die Ablage.',
       'Drei gleiche, offene Karten in derselben Spalte verlassen den Tisch und zählen nicht.',
@@ -742,10 +750,9 @@ async function checkAllFlipped(){
   if(G.players.every(p=>p.grid.filter(c=>c.up).length>=2)){ await wait(350); await beginPlay(); }
 }
 async function beginPlay(){
-  let s;
-  if(G.prevEnder!==null) s=G.prevEnder;
-  else { let best=-99; G.players.forEach((p,i)=>{const v=visibleSum(p); if(v>best){best=v;s=i;}}); }
-  log('starts', s, G.prevEnder!==null);
+  // every round: whoever shows the highest sum after the first two flips goes first
+  let s=0, best=-99; G.players.forEach((p,i)=>{ const v=visibleSum(p); if(v>best){ best=v; s=i; } });
+  log('starts', s, false);
   await beginTurn(s);
 }
 async function beginTurn(c){
@@ -1185,7 +1192,7 @@ $('#newBtn').onclick=goHome;
   lg.addEventListener('click',flip);
   lg.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); flip(); } }); })();
 $('#rulesBtn').onclick=showRules;
-function goHome(){ document.querySelectorAll('.sixSeven').forEach(e=>e.remove()); stopFinale(); closeModal(); leaveRoom(); G=null; ['#fx','#opps','#mine','#deck','#discard','#held','#scores','#log','#msg'].forEach(q=>{ $(q).innerHTML=''; }); mySeat=0; show('home'); }
+function goHome(){ if(updatePending){ leaveRoom(); reloadFresh(); return; } document.querySelectorAll('.sixSeven').forEach(e=>e.remove()); stopFinale(); closeModal(); leaveRoom(); G=null; ['#fx','#opps','#mine','#deck','#discard','#held','#scores','#log','#msg'].forEach(q=>{ $(q).innerHTML=''; }); mySeat=0; show('home'); }
 
 function renderLobby(){
   const T=L();
@@ -1534,6 +1541,37 @@ function runCanvas(win){
   if(finRaf) cancelAnimationFrame(finRaf);
   finRaf=requestAnimationFrame(frame);
 }
+
+
+/* ---------- automatic updates ----------
+   GitHub Pages lets browsers keep an old copy for a while. The page asks the server
+   for its own newest copy (bypassing every cache) and, when the build stamp differs,
+   reloads itself while nobody is mid-game, or offers a button when someone is. */
+const BUILD=(document.querySelector('meta[name="luma-build"]')||{}).content||'';
+let updatePending=false, lastUpdCheck=0;
+const inGame=()=>!!G || MODE!=='solo';
+function reloadFresh(){
+  const u=location.pathname+'?v='+Date.now()+location.hash;
+  location.replace(u);
+}
+async function checkUpdate(){
+  if(!BUILD || location.protocol==='file:' || Date.now()-lastUpdCheck<20000) return;
+  lastUpdCheck=Date.now();
+  try{
+    const r=await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return;
+    const m=(await r.text()).match(/<meta name="luma-build" content="([^"]+)"/);
+    if(!m || m[1]===BUILD) return;
+    updatePending=true;
+    if(!inGame()) reloadFresh(); else $('#updBar').hidden=false;
+  }catch(e){}
+}
+$('#updBtn').onclick=reloadFresh;
+// drop the cache-busting "?v=" from the address bar so shared links stay clean
+if(/[?&]v=\d+/.test(location.search)){ try{ history.replaceState(null,'',location.pathname+location.hash); }catch(e){} }
+setTimeout(checkUpdate, 1500);
+setInterval(checkUpdate, 5*60*1000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkUpdate(); });
 
 applyStatic();
 initRoom();
