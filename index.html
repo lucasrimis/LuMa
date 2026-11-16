@@ -2,9 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#101a33">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LuMa">
 <meta name="description" content="LuMa — jogo de cartas online para até 4 pessoas.">
-<meta name="luma-build" content="20261115215551">
+<meta name="luma-build" content="20261116174026">
 <title>LuMa — jogo de cartas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Tilt+Neon&display=swap" rel="stylesheet">
@@ -177,6 +185,12 @@
     background:#1e1a3d;border:1px solid var(--accent);border-radius:14px;padding:8px 10px 8px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45);
     font-size:14px;max-width:calc(100vw - 20px)}
   #updBar small{color:var(--muted)}
+
+  /* installed app: keep clear of the notch and the home bar */
+  header{padding-top:calc(12px + env(safe-area-inset-top,0px));padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:calc(16px + env(safe-area-inset-right,0px))}
+  body{padding-bottom:env(safe-area-inset-bottom,0px)}
+  #updBar{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  .installHint{color:var(--muted);font-size:14px;margin-top:12px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -206,7 +220,9 @@
     </div>
     <div class="divider" data-i18n="orSolo"></div>
     <button class="btn big" id="soloBtn" data-i18n="solo"></button>
+    <button class="btn big" id="installBtn" data-i18n="install" hidden style="margin-top:10px;background:#2f6fb0;border-color:transparent"></button>
   </div>
+  <div class="installHint" id="iosHint" hidden data-i18n="iosInstall"></div>
   <div class="note" id="homeNote"></div>
 </section>
 
@@ -315,7 +331,7 @@ const an = v => ((v===8||v===11||v===18)?'an ':'a ')+v;
 const I18N = {
   pt: {
     htmlLang:'pt-BR', title:'LuMa — jogo de cartas',
-    updateReady:'Há uma nova versão do LuMa.', updateLater:'Ela entra sozinha quando você voltar ao início.', updateNow:'Atualizar agora', rules:'Regras', home:'Início', welcome:'Bem-vindo à mesa',
+    install:'📲 Instalar o jogo', iosInstall:'📲 Para instalar no iPhone: toque em Compartilhar e depois em Adicionar à Tela de Início.', updateReady:'Há uma nova versão do LuMa.', updateLater:'Ela entra sozinha quando você voltar ao início.', updateNow:'Atualizar agora', rules:'Regras', home:'Início', welcome:'Bem-vindo à mesa',
     intro:`Faça a menor pontuação possível. O jogo acaba quando alguém chega a ${LIMIT} pontos.`,
     yourName:'Seu nome', namePh:'Como quer ser chamado?',
     createRoom:'Criar sala online', orJoin:'ou entre numa sala com o código:', join:'Entrar', orSolo:'ou jogue sozinho:',
@@ -375,7 +391,7 @@ const I18N = {
   },
   en: {
     htmlLang:'en', title:'LuMa — card game',
-    updateReady:'A new version of LuMa is available.', updateLater:'It loads by itself when you go back home.', updateNow:'Update now', rules:'Rules', home:'Home', welcome:'Welcome to the table',
+    install:'📲 Install the game', iosInstall:'📲 To install on iPhone: tap Share, then Add to Home Screen.', updateReady:'A new version of LuMa is available.', updateLater:'It loads by itself when you go back home.', updateNow:'Update now', rules:'Rules', home:'Home', welcome:'Welcome to the table',
     intro:`Score as few points as possible. The game ends when someone reaches ${LIMIT} points.`,
     yourName:'Your name', namePh:'What should we call you?',
     createRoom:'Create online room', orJoin:'or join a room with its code:', join:'Join', orSolo:'or play on your own:',
@@ -435,7 +451,7 @@ const I18N = {
   },
   de: {
     htmlLang:'de', title:'LuMa — Kartenspiel',
-    updateReady:'Eine neue Version von LuMa ist verfügbar.', updateLater:'Sie lädt automatisch, wenn du zum Start zurückkehrst.', updateNow:'Jetzt aktualisieren', rules:'Regeln', home:'Start', welcome:'Willkommen am Tisch',
+    install:'📲 Spiel installieren', iosInstall:'📲 Auf dem iPhone installieren: Tippe auf Teilen und dann auf Zum Home-Bildschirm.', updateReady:'Eine neue Version von LuMa ist verfügbar.', updateLater:'Sie lädt automatisch, wenn du zum Start zurückkehrst.', updateNow:'Jetzt aktualisieren', rules:'Regeln', home:'Start', welcome:'Willkommen am Tisch',
     intro:`Sammle so wenige Punkte wie möglich. Das Spiel endet, sobald jemand ${LIMIT} Punkte erreicht.`,
     yourName:'Dein Name', namePh:'Wie sollen wir dich nennen?',
     createRoom:'Online-Raum erstellen', orJoin:'oder tritt einem Raum mit Code bei:', join:'Beitreten', orSolo:'oder spiel allein:',
@@ -1543,6 +1559,21 @@ function runCanvas(win){
 }
 
 
+/* ---------- installable app (PWA), like the other games ---------- */
+const HOSTED=/github\.io$|pages\.dev$/i.test(location.hostname) || location.hostname==='localhost' || location.hostname==='127.0.0.1';
+let swReg=null;
+if(HOSTED && 'serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js').then(r=>{ swReg=r; }).catch(()=>{}); }catch(e){} }
+(function(){
+  const standalone=(window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) || navigator.standalone;
+  if(standalone || !HOSTED) return;
+  let deferred=null;
+  const btn=$('#installBtn');
+  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferred=e; btn.hidden=false; });
+  btn.addEventListener('click',async()=>{ if(!deferred) return; deferred.prompt(); try{ await deferred.userChoice; }catch(e){} deferred=null; btn.hidden=true; });
+  window.addEventListener('appinstalled',()=>{ btn.hidden=true; });
+  if(/iphone|ipad|ipod/i.test(navigator.userAgent)) $('#iosHint').hidden=false;
+})();
+
 /* ---------- automatic updates ----------
    GitHub Pages lets browsers keep an old copy for a while. The page asks the server
    for its own newest copy (bypassing every cache) and, when the build stamp differs,
@@ -1551,6 +1582,7 @@ const BUILD=(document.querySelector('meta[name="luma-build"]')||{}).content||'';
 let updatePending=false, lastUpdCheck=0;
 const inGame=()=>!!G || MODE!=='solo';
 function reloadFresh(){
+  try{ if(swReg) swReg.update().catch(()=>{}); }catch(e){}
   const u=location.pathname+'?v='+Date.now()+location.hash;
   location.replace(u);
 }
